@@ -14,14 +14,21 @@ function NewsTable() {
     }
 
     const [data, setData] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
 
     const getAllNews = async () => {
+        setIsLoading(true);
+        setLoadError(false);
         try {
             const response = await api.get('News/list');
             const res = response.data;
             setData(res.reverse());
         } catch (err) {
             console.log(err);
+            setLoadError(true);
+        } finally {
+            setIsLoading(false);
         }
     }
 
@@ -88,6 +95,7 @@ function NewsTable() {
                         <Link to='chua-kich-hoat' className='btn btn-warning mb-2'>Tin tức chưa kích hoạt</Link>
                         <Link to='tao-tin-tuc' className='btn btn-success mb-2'>+ Thêm tin tức</Link>
                     </div>
+                    <div className="news-table-scroll" role="region" aria-label="Bảng tin tức" tabIndex={0}>
                     <table className='table table-hover table-striped' border={1}>
                         <thead className='table-primary'>
                             <tr>
@@ -100,16 +108,20 @@ function NewsTable() {
                             </tr>
                         </thead>
                         <tbody className='table-group-divider align-middle'>
-                            {records.length > 0 ? (
+                            {isLoading ? (
+                                <tr><td colSpan={6}><p className="news-table-state" role="status">Đang tải danh sách tin tức…</p></td></tr>
+                            ) : loadError ? (
+                                <tr><td colSpan={6}><div className="news-table-state news-table-state--error" role="alert"><span>Không thể tải danh sách tin tức. Vui lòng thử lại.</span><button className="btn btn-outline-primary" type="button" onClick={() => void getAllNews()}>Thử lại</button></div></td></tr>
+                            ) : records.length > 0 ? (
                                 records.map((news, i) => (
                                     <tr key={i}>
                                         <td>{news.newsId}</td>
                                         <td>{truncateText(news.title, 12)}</td>
                                         <td>{truncateText(news.description, 15)}</td>
-                                        <td>{truncateText(news.content, 30)}</td> {/* Truncate content here */}
+                                        <td>{truncateText(news.content, 30)}</td>
                                         <td className='text-center'>{news.status == true ? "Kích hoạt" : "Chưa kích hoạt"}</td>
                                         <td className='button text-center'>
-                                            <button className="btn btn-primary" type="submit" onClick={() => updateBtn(news.newsId)}>Cập nhật</button>
+                                            <button className="btn btn-primary" type="button" onClick={() => updateBtn(news.newsId)}>Cập nhật</button>
                                             <button className="btn btn-danger" type="button" onClick={() => handleDelete(news.newsId)}>Xoá</button>
                                         </td>
                                     </tr>
@@ -125,6 +137,7 @@ function NewsTable() {
                             )}
                         </tbody>
                     </table>
+                    </div>
                     <nav>
                         <ul className='pagination'>
                             <li className='page-item'>
@@ -217,7 +230,7 @@ export function InactiveNewsTable() {
     }
 
     const updateBtn = (newsId) => {
-        navigate(`cap-nhat-tin-tuc/${newsId}`);
+        navigate(`/quan-ly-tin-tuc/cap-nhat-tin-tuc/${newsId}`);
         window.scroll({
             top: 0,
             behavior: 'instant'
@@ -234,8 +247,9 @@ export function InactiveNewsTable() {
                 <div className='news-table-content'>
                     <form action="">
                         <div className='d-flex justify-content-end gap-2'>
-                            <Link to='tao-tin-tuc' className='btn btn-success mb-2'>+ Thêm tin tức</Link>
+                            <Link to='/quan-ly-tin-tuc/tao-tin-tuc' className='btn btn-success mb-2'>+ Thêm tin tức</Link>
                         </div>
+                        <div className="news-table-scroll" role="region" aria-label="Bảng tin chưa kích hoạt" tabIndex={0}>
                         <table className='table table-hover table-striped' border={1}>
                             <thead className='table-primary'>
                                 <tr>
@@ -254,10 +268,10 @@ export function InactiveNewsTable() {
                                             <td>{news.newsId}</td>
                                             <td>{truncateText(news.title, 12)}</td>
                                             <td>{truncateText(news.description, 15)}</td>
-                                            <td>{truncateText(news.content, 30)}</td> {/* Truncate content here */}
+                                            <td>{truncateText(news.content, 30)}</td>
                                             <td className='text-center'>{news.status == true ? "Kích hoạt" : "Chưa kích hoạt"}</td>
                                             <td className='button text-center'>
-                                                <button className="btn btn-primary" type="submit" onClick={() => updateBtn(news.newsId)}>Kích hoạt</button>
+                                                <button className="btn btn-primary" type="button" onClick={() => updateBtn(news.newsId)}>Kích hoạt</button>
                                                 <button className="btn btn-danger" type="button" onClick={() => handleDelete(news.newsId)}>Xoá</button>
                                             </td>
                                         </tr>
@@ -273,6 +287,7 @@ export function InactiveNewsTable() {
                                 )}
                             </tbody>
                         </table>
+                        </div>
                         <nav>
                             <ul className='pagination'>
                                 <li className='page-item'>

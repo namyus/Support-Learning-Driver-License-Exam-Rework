@@ -1,28 +1,32 @@
 import './footer-inf.scss'
-import FooterImg from '../../../../../../assets/imgs/commiting/commiting.png'
+import CommitmentImg from '../../../../../../assets/imgs/commiting/commiting.png'
 
 function FooterInformation() {
     return (
         <>
-            <div className="footer-container">
-                <div className="footer-information">
-                    <h1>Trung tâm đào tạo lái xe FDRIVING</h1>
-                    <p className="contact-information">
+            <div className='footer-container gh-footer-container'>
+                <div className='footer-information gh-footer-info'>
+                    <h1 className='gh-footer-title'>Trung tâm đào tạo lái xe FDRIVING</h1>
+                    <div className='contact-information gh-footer-contact'>
                         <ul>
-                            <li>Liên hệ:</li>
+                            <li>Liên hệ</li>
                             <li>Hotline 1: 0987987654</li>
                             <li>Hotline 2: 0978234786</li>
                             <li>Địa chỉ: 123/56 Trần Hưng Đạo, Phường 5, Quận 1</li>
                         </ul>
-                    </p>
+                    </div>
                 </div>
-                <div className='divine-line'></div>
 
+                <div className='divine-line gh-footer-divider' aria-hidden='true'></div>
 
-                <div className='commiting-information'>
+                <div className='commiting-information gh-footer-legal'>
                     <p className='line-1'>Quyết định thành lập số 773/QĐ – UBND ngày 27/02/2009.</p>
                     <p className='line-2'>Giấy phép số 69/TCĐBVN-QLPT&NL ngày 08/07/2011 của Tổng Cục Đường bộ Việt Nam.</p>
-                    <img src={FooterImg} alt="" />
+                    <img
+                        src={CommitmentImg}
+                        alt='Chứng nhận điểm ghi danh học lái xe Sở Giao thông Vận tải TP.HCM'
+                        className='gh-footer-badge'
+                    />
                 </div>
             </div>
         </>

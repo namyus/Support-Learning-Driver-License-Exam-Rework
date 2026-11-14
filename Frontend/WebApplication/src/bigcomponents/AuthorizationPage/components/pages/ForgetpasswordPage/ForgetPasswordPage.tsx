@@ -5,12 +5,11 @@ import "./index.scss";
 
 const ForgetPasswordPage: React.FC = () => {
   return (
-    <>
-      <div className="forgetpassword">
-        <ForgetPassword />
-      </div>
-    </>
+    <main className="forgetpassword">
+      <ForgetPassword />
+    </main>
   );
 };
 
 export default ForgetPasswordPage;
+

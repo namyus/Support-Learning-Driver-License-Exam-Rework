@@ -19,8 +19,24 @@
 
         form {
             width: 90%;
+            min-width: 0;
+
+            .exams-table-scroll {
+                width: 100%;
+                max-width: 100%;
+                overflow-x: auto;
+                overscroll-behavior-x: contain;
+                -webkit-overflow-scrolling: touch;
+
+                &:focus-visible {
+                    outline: 2px solid #1e62b6;
+                    outline-offset: 2px;
+                }
+            }
 
             table {
+                min-width: 960px;
+
                 .button {
                     width: auto;
 
@@ -30,5 +46,25 @@
                 }
             }
         }
+    }
+}
+
+@media (max-width: 767px) {
+    .exams-table-container .exams-table-content form > .d-grid > .row {
+        row-gap: 10px;
+        margin-right: 0;
+        margin-left: 0;
+    }
+
+    .exams-table-container .search-input,
+    .exams-table-container .btnCreate {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    .exams-table-container .btnCreate {
+        justify-content: flex-start !important;
+
+        .btn { white-space: nowrap; }
     }
 }

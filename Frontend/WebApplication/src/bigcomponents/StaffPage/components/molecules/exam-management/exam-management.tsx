@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import './exam-management.scss';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../../../../../config/axios';
 import { toast } from 'react-toastify';
 
@@ -21,8 +21,6 @@ function ExamTable() {
     const records = filteredData.slice(firsIndex, lastIndex);
     const npage = Math.ceil(filteredData.length / recordPage);
     const numbers = [...Array(npage + 1).keys()].slice(1);
-
-    const navigate = useNavigate();
 
     // Fetch all courses
     const getAllExams = async () => {
@@ -69,7 +67,7 @@ function ExamTable() {
 
     const handleCreate = async (examId) => {
         try {
-            let examIDJson = JSON.stringify(examId);
+            const examIDJson = JSON.stringify(examId);
             await api.post('Test/add',
                 {
                     Headers: {
@@ -123,6 +121,7 @@ function ExamTable() {
                             </div>
                         </div>
                     </div>
+                    <div className="exams-table-scroll" role="region" aria-label="Bảng kỳ thi" tabIndex={0}>
                     <table className='table table-hover table-striped' border={1}>
                         <thead className='table-primary'>
                             <tr>
@@ -142,7 +141,6 @@ function ExamTable() {
                         <tbody className='table-group-divider align-middle'>
                             {records.length > 0 ? (
                                 records.map((exam, i) => {
-                                    ;
                                     return (
                                         <tr key={i}>
                                             <td>{exam.examId}</td>
@@ -172,6 +170,7 @@ function ExamTable() {
                             )}
                         </tbody>
                     </table>
+                    </div>
                     <nav>
                         <ul className='pagination'>
                             <li className='page-item'>

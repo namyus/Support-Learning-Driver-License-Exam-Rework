@@ -1,78 +1,216 @@
 import './new.scss'
 import NewsImg from '../../../../../../assets/imgs/news/news-img.jpeg'
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import axios from 'axios';
+import { Button, Modal } from 'react-bootstrap';
 import api from '../../../../../config/axios';
 
+interface NewsItem {
+    newsId?: string | number;
+    title?: string;
+    description?: string;
+    content?: string | null;
+    createdTime?: string;
+}
+
 function News() {
+    const [data, setData] = useState<NewsItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
 
-    const [data, setData] = useState(null);
-    const [_isLoading, setIsLoading] = useState(true);
+    const getAllNews = useCallback(async () => {
+        setIsLoading(true);
+        setErrorMessage(null);
 
-    const getAllNews = async () => {
-        const response = await api.get('News/list');
-        console.log(response);
-        setData(response.data);
-        setIsLoading(false);
-    }
+        try {
+            const response = await api.get('News/list');
+            const payload = response.data;
+
+            if (!Array.isArray(payload)) {
+                setData([]);
+                setErrorMessage('Không thể tải tin tức. Vui lòng thử lại sau.');
+                setIsLoading(false);
+                return;
+            }
+
+            setData(payload);
+            setIsLoading(false);
+        } catch (error) {
+            console.error(error);
+
+            const isKnownNoNews404 =
+                axios.isAxiosError(error) &&
+                error.response?.status === 404 &&
+                (error.response?.data as { error?: string } | undefined)?.error === 'Không tìm thấy tin tức!';
+
+            if (isKnownNoNews404) {
+                setData([]);
+                setErrorMessage(null);
+            } else {
+                setData([]);
+                setErrorMessage('Không thể tải tin tức. Vui lòng thử lại sau.');
+            }
+
+            setIsLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
         getAllNews();
-    }, [])
+    }, [getAllNews]);
 
-    const formatDate = (dbDate) => {
+    const formatDate = (dbDate?: string) => {
+        if (!dbDate) {
+            return '';
+        }
         const date = new Date(dbDate);
+        if (Number.isNaN(date.getTime())) {
+            return '';
+        }
         const day = date.getDate().toString().padStart(2, '0');
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
         const year = date.getFullYear();
         return `${day}/${month}/${year}`;
-    }
+    };
 
-    const maxNewsDisplayed = 3; // Set the maximum number of divs to display
+    const maxNewsDisplayed = 3;
+    const displayedNews = Array.isArray(data) ? data.slice(0, maxNewsDisplayed) : [];
 
-    function truncateText(text, maxLength) {
-        if (text.length <= maxLength) {
-            return text;
-        } else {
-            return text.slice(0, maxLength) + '...';
+    function truncateText(text: string | null | undefined, maxLength: number) {
+        const safeText = typeof text === 'string' ? text : '';
+        if (safeText.length <= maxLength) {
+            return safeText;
         }
+        return safeText.slice(0, maxLength) + '...';
     }
+
+    const handleCloseModal = () => {
+        setSelectedNews(null);
+    };
 
     return (
-        <div className='news-home-container' id='news-section'>
-            <h1>Tin tức</h1>
-            <div className="news-list">
-                {
-                    maxNewsDisplayed > 0 ? (
-                        Array.from({ length: maxNewsDisplayed }).map((_, i) => {
-                            const newsItem = data && data[i];
+        <>
+            <section
+                className='news-home-container gh-news-section'
+                id='news-section'
+                aria-labelledby='gh-news-heading'
+            >
+                <div className='gh-section-header'>
+                    <h2 id='gh-news-heading' className='gh-section-title'>
+                        Tin tức
+                    </h2>
+                </div>
+
+                {isLoading ? (
+                    <div className='gh-news-state gh-news-state--loading' role='status' aria-live='polite'>
+                        <div className='gh-news-state__spinner' aria-hidden='true' />
+                        <p className='gh-news-state__text'>Đang tải tin tức...</p>
+                    </div>
+                ) : errorMessage ? (
+                    <div className='gh-news-state gh-news-state--error' role='alert'>
+                        <p className='gh-news-state__text'>{errorMessage}</p>
+                        <button
+                            type='button'
+                            className='gh-news-state__retry'
+                            onClick={getAllNews}
+                        >
+                            Thử lại
+                        </button>
+                    </div>
+                ) : displayedNews.length > 0 ? (
+                    <div className='news-list gh-news-grid'>
+                        {displayedNews.map((newsItem, i) => {
+                            const formattedDate = formatDate(newsItem.createdTime);
                             return (
-                                <div className={`news-section-${i + 1}`} key={i}>
-                                    <img src={NewsImg} alt="news-img" />
-                                    {newsItem ? (
-                                        <>
-                                            <h2 className={`news-${i + 1}-title`}>{newsItem.title}</h2>
-                                            <h3 className={`news-${i + 1}-description`}>{newsItem.description}</h3>
-                                            <p className={`news-${i + 1}-content`}>{truncateText(newsItem.content, 100)}</p>
-                                            <div className='date-container'>
-                                                <p className={`news-${i + 1}-date`}>{formatDate(newsItem.createdTime)}</p>
+                                <article
+                                    className={`news-section-${i + 1} gh-news-card`}
+                                    key={newsItem.newsId ?? `${newsItem.title ?? 'news'}-${i}`}
+                                >
+                                    <div className='gh-news-card__media'>
+                                        <img
+                                            src={NewsImg}
+                                            alt={newsItem.title || 'Tin tức trung tâm đào tạo lái xe FDriving'}
+                                            className='gh-news-card__img'
+                                        />
+                                        {formattedDate && (
+                                            <div className='date-container gh-news-card__date'>
+                                                <p className={`news-${i + 1}-date`}>{formattedDate}</p>
                                             </div>
-                                            <button className='mt-1'>Đọc thêm</button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <h2 className={`news-${i + 1}-title`}>No news available</h2>
-                                        </>
-                                    )}
-                                </div>
+                                        )}
+                                    </div>
+                                    <div className='gh-news-card__body'>
+                                        <h3 className={`news-${i + 1}-title gh-news-card__title`}>
+                                            {newsItem.title}
+                                        </h3>
+                                        {newsItem.description && (
+                                            <p className={`news-${i + 1}-description gh-news-card__desc`}>
+                                                {newsItem.description}
+                                            </p>
+                                        )}
+                                        <p className={`news-${i + 1}-content gh-news-card__excerpt`}>
+                                            {truncateText(newsItem.content, 100)}
+                                        </p>
+                                        <button
+                                            type='button'
+                                            className='gh-news-card__btn'
+                                            onClick={() => setSelectedNews(newsItem)}
+                                        >
+                                            Đọc thêm
+                                        </button>
+                                    </div>
+                                </article>
                             );
-                        })
-                    ) : (
-                        <h1 className='text-center'>Không có thông tin để hiển thị</h1>
-                    )
-                }
-            </div>
-        </div>
-    )
+                        })}
+                    </div>
+                ) : (
+                    <div className='gh-news-state gh-news-state--empty' role='status'>
+                        <p className='gh-news-state__text'>Hiện chưa có tin tức mới.</p>
+                    </div>
+                )}
+            </section>
+
+            <Modal
+                show={selectedNews !== null}
+                onHide={handleCloseModal}
+                keyboard={true}
+                backdrop={true}
+                dialogClassName='gh-news-modal'
+                centered
+                size='lg'
+            >
+                <Modal.Header closeButton>
+                    <div className='gh-news-modal__header-content'>
+                        {selectedNews?.createdTime && formatDate(selectedNews.createdTime) && (
+                            <span className='gh-news-modal__date'>
+                                Ngày đăng: {formatDate(selectedNews.createdTime)}
+                            </span>
+                        )}
+                        <Modal.Title className='gh-news-modal__title'>
+                            {selectedNews?.title}
+                        </Modal.Title>
+                    </div>
+                </Modal.Header>
+                <Modal.Body>
+                    {selectedNews?.description && (
+                        <p className='gh-news-modal__desc'>{selectedNews.description}</p>
+                    )}
+                    <div className='gh-news-modal__content'>
+                        {selectedNews?.content || ''}
+                    </div>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button
+                        variant='secondary'
+                        className='gh-news-modal__close'
+                        onClick={handleCloseModal}
+                    >
+                        Đóng
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+        </>
+    );
 }
 
-export default News
+export default News;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import './news-create-form.scss';
 import api from '../../../../../config/axios';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 function CreateNewsForm() {
@@ -103,71 +103,61 @@ function CreateNewsForm() {
 
     return (
         <div className='create-news-container'>
-            <div className='create-news-title'>
-                <h1 className='text-center text-uppercase'>Tạo tin tức</h1>
-            </div>
-            <div className='create-news-form'>
-                {error && <h5 className="error-message mb-3 text-danger">{error}</h5>}
+            <Link className="create-news-back-link" to="/quan-ly-tin-tuc">
+                <span aria-hidden="true">←</span> Quay lại danh sách tin tức
+            </Link>
+            <header className='create-news-title'>
+                <h1>Tạo tin tức mới</h1>
+                <p>Soạn thảo và đăng tải thông tin mới của trung tâm.</p>
+            </header>
+            <section className="create-news-card" aria-labelledby="create-news-heading">
+                <div className="create-news-card-heading">
+                    <h2 id="create-news-heading">Thông tin tin tức</h2>
+                    <p>Các trường có dấu * là bắt buộc.</p>
+                </div>
+                {error && <p className="create-news-error" role="alert">{error}</p>}
                 <form onSubmit={handleSubmit}>
-                    {/* <div className='form-group row'>
-                        <label htmlFor="title" className="col-sm-3 col-form-label">Mã tin tức: </label>
-                        <div className="col-sm-9">
-                            <input
-                                type="text"
-                                className="form-control"
-                                id="newsId"
-                                placeholder="mã tin tức"
-                                name='newsId'
-                                value={inputData.newsId}
-                                onChange={e => setInputData({ ...inputData, newsId: parseInt(e.target.value)})}
-                            />
-                        </div>
-                    </div> */}
-                    <div className='form-group row'>
-                        <label htmlFor="title" className="col-sm-3 col-form-label">Tiêu đề: </label>
-                        <div className="col-sm-9">
-                            <input
-                                type="text"
-                                className="form-control"
-                                id="title"
-                                placeholder="tiêu đề"
-                                name='title'
-                                value={inputData.title}
-                                onChange={e => setInputData({ ...inputData, title: e.target.value })}
-                            />
-                        </div>
+                    <div className="create-news-field">
+                        <label htmlFor="title">Tiêu đề <span aria-hidden="true">*</span></label>
+                        <input
+                            type="text"
+                            className="form-control"
+                            id="title"
+                            placeholder="Tiêu đề"
+                            name='title'
+                            value={inputData.title}
+                            onChange={e => setInputData({ ...inputData, title: e.target.value })}
+                        />
                     </div>
-                    <div className='form-group row'>
-                        <label htmlFor="description" className="col-sm-3 col-form-label">Mô tả: </label>
-                        <div className="col-sm-9">
-                            <input
-                                type="text"
-                                className="form-control"
-                                id="description"
-                                placeholder="mô tả"
-                                name='description'
-                                value={inputData.description}
-                                onChange={e => setInputData({ ...inputData, description: e.target.value })}
-                            />
-                        </div>
+                    <div className="create-news-field">
+                        <label htmlFor="description">Mô tả</label>
+                        <input
+                            type="text"
+                            className="form-control"
+                            id="description"
+                            placeholder="Mô tả"
+                            name='description'
+                            value={inputData.description}
+                            onChange={e => setInputData({ ...inputData, description: e.target.value })}
+                        />
                     </div>
-                    <div className='form-group row'>
-                        <label htmlFor="content" className="col-sm-3 col-form-label">Nội dung: </label>
-                        <div className="col-sm-9">
-                            <textarea
-                                className="form-control"
-                                id="content"
-                                placeholder="nội dung"
-                                style={{ resize: 'none', height: '200px' }}
-                                name='content'
-                                value={inputData.content}
-                                onChange={e => setInputData({ ...inputData, content: e.target.value })}
-                            />
-                        </div>
+                    <div className="create-news-field create-news-field--content">
+                        <label htmlFor="content">Nội dung <span aria-hidden="true">*</span></label>
+                        <textarea
+                            className="form-control create-news-textarea"
+                            id="content"
+                            placeholder="Nội dung"
+                            name='content'
+                            value={inputData.content}
+                            onChange={e => setInputData({ ...inputData, content: e.target.value })}
+                        />
                     </div>
-                    <button className='btn btn-primary w-20 justify-self-end' type='submit'>Tạo</button>
+                    <div className="create-news-actions">
+                        <Link className="create-news-cancel-button" to="/quan-ly-tin-tuc">Hủy</Link>
+                        <button className="create-news-submit-button" type='submit'>Tạo tin tức</button>
+                    </div>
                 </form>
-            </div>
+            </section>
         </div>
     );
 }

@@ -1,38 +1,37 @@
-.update-news-container {
+@use "../create-new-form/news-create-form.scss";
 
-    .update-news-title {
-        h1 {
-            text-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+.update-news-container {
+    .create-news-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        min-height: 36px;
+        margin-bottom: 18px;
+        color: #1e62b6;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+
+        &:hover {
+            color: #174f94;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        &:focus-visible {
+            border-radius: 4px;
+            outline: 3px solid rgba(30, 98, 182, 0.22);
+            outline-offset: 3px;
         }
     }
 
-    .update-news-form {
-        margin-top: 70px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
+    .update-news-title {
+        margin-bottom: 26px;
+    }
+}
 
-        form {
-            display: grid;
-            gap: 26px;
-            width: 60%;
-
-            button {
-                justify-self: center;
-            }
-
-            .text-box {
-                display: grid;
-                margin: 0;
-
-                .clear-text-btn {
-                    width: 100px;
-                    justify-self: flex-end;
-                    margin-top: 10px;
-                }
-            }
-        }
-
+@media (max-width: 767px) {
+    .update-news-container .create-news-back-link {
+        margin-bottom: 14px;
     }
 }

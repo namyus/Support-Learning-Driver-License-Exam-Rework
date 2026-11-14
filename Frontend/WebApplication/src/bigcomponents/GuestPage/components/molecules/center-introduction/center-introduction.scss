@@ -64,9 +64,331 @@
         text-align: center;
         max-width: 300px;
         color: red;
-        position: absolute;
         top: 0;
         left: 25%;
         font-style: italic;
+    }
+}
+
+/* ==========================================================================
+   Scoped Guest Home Page — Step 2: Notice Bar, Hero Banner & Notice Modal
+   ========================================================================== */
+
+.guest-home-page {
+    .introduction-container {
+        position: relative;
+        width: 100%;
+        background-color: var(--gh-bg-surface, #FFFFFF);
+
+        .notice-information {
+            height: auto;
+            min-height: 48px;
+            padding: 8px 24px;
+            background-color: var(--gh-accent-amber-bg, #FFFBEB);
+            border-bottom: 1px solid var(--gh-accent-amber-border, #FDE68A);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            .clickable-text.gh-notice-btn {
+                animation: none;
+                appearance: none;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 34px;
+                padding: 5px 20px;
+                border-radius: 999px;
+                background-color: #FEF3C7;
+                color: #92400E;
+                border: 1px solid #F59E0B;
+                font-family: inherit;
+                font-size: 0.875rem;
+                font-weight: 700;
+                line-height: 1.4;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                text-decoration: none;
+                cursor: pointer;
+                box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+                transition:
+                    background-color 0.18s ease,
+                    border-color 0.18s ease,
+                    color 0.18s ease,
+                    box-shadow 0.18s ease,
+                    transform 0.15s ease;
+
+                &:hover {
+                    animation-play-state: paused;
+                    background-color: #FDE68A;
+                    border-color: #D97706;
+                    color: #78350F;
+                    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.1);
+                }
+
+                &:active {
+                    background-color: #FCD34D;
+                    border-color: #B45309;
+                    color: #78350F;
+                    transform: translateY(0.5px);
+                }
+
+                &:focus-visible {
+                    outline: 2px solid #D97706;
+                    outline-offset: 2px;
+                    box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.22);
+                }
+            }
+        }
+
+        .img-container {
+            position: relative;
+            width: 100%;
+            height: clamp(300px, 44vw, 500px);
+            margin: 0;
+            overflow: hidden;
+            background-color: #0F172A;
+
+            .center-img {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                display: block;
+                object-fit: cover;
+                object-position: center 22%;
+                box-shadow: none;
+            }
+
+            .gh-hero-overlay {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: flex-end;
+                background:
+                    linear-gradient(
+                        180deg,
+                        rgba(15, 23, 42, 0.28) 0%,
+                        rgba(15, 23, 42, 0.12) 42%,
+                        rgba(15, 23, 42, 0.62) 76%,
+                        rgba(15, 23, 42, 0.86) 100%
+                    ),
+                    linear-gradient(
+                        90deg,
+                        rgba(15, 23, 42, 0.72) 0%,
+                        rgba(15, 23, 42, 0.34) 52%,
+                        rgba(15, 23, 42, 0.08) 100%
+                    );
+                pointer-events: none;
+            }
+
+            .gh-hero-content {
+                width: 100%;
+                max-width: var(--gh-container-max, 1200px);
+                margin: 0 auto;
+                padding: 32px 24px 36px;
+                pointer-events: auto;
+            }
+
+            .introduction-title {
+                position: static;
+                margin: 0;
+                max-width: 640px;
+                padding-left: 16px;
+                border-left: 4px solid var(--gh-brand-sky, #4292EB);
+                text-align: left;
+                color: #FFFFFF;
+                font-style: normal;
+                font-weight: 700;
+                font-size: clamp(1.625rem, 3.2vw, 2.5rem);
+                line-height: 1.25;
+                letter-spacing: -0.01em;
+                text-shadow: 0 2px 12px rgba(15, 23, 42, 0.65);
+            }
+        }
+    }
+}
+
+/* Modal is portaled to document.body by React-Bootstrap; scope via dialogClassName */
+.gh-notice-modal {
+    .modal-content {
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        box-shadow:
+            0 20px 25px -5px rgba(15, 23, 42, 0.18),
+            0 8px 10px -6px rgba(15, 23, 42, 0.1);
+        overflow: hidden;
+    }
+
+    .modal-header {
+        background-color: #FFFBEB;
+        border-bottom: 1px solid #FDE68A;
+        padding: 16px 24px;
+        align-items: center;
+
+        .btn-close {
+            &:focus-visible {
+                outline: 2px solid #D97706;
+                outline-offset: 2px;
+                box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.22);
+            }
+        }
+    }
+
+    .gh-notice-modal__title {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        line-height: 1.35;
+        color: #92400E;
+    }
+
+    .modal-body {
+        padding: 24px 28px;
+        background-color: #FFFFFF;
+
+        .text-content {
+            margin: 0;
+        }
+    }
+
+    .gh-notice-modal__body {
+        margin: 0;
+        font-size: 1.0625rem;
+        font-weight: 400;
+        line-height: 1.75;
+        color: #1E293B;
+        text-align: left;
+    }
+
+    .modal-footer {
+        padding: 14px 24px;
+        background-color: #F8FAFC;
+        border-top: 1px solid #E2E8F0;
+    }
+
+    .gh-notice-modal__close {
+        min-height: 40px;
+        padding: 8px 24px;
+        border-radius: 8px;
+        background-color: #1E62B6;
+        border-color: #1E62B6;
+        color: #FFFFFF;
+        font-weight: 600;
+        font-size: 0.9375rem;
+        transition:
+            background-color 0.18s ease,
+            border-color 0.18s ease,
+            box-shadow 0.18s ease;
+
+        &:hover,
+        &:active {
+            background-color: #164C8F !important;
+            border-color: #164C8F !important;
+            color: #FFFFFF !important;
+        }
+
+        &:focus-visible {
+            outline: 2px solid #1E62B6;
+            outline-offset: 2px;
+            box-shadow: 0 0 0 4px rgba(66, 146, 235, 0.35);
+        }
+    }
+}
+
+@media (max-width: 991.98px) {
+    .guest-home-page {
+        .introduction-container {
+            .img-container {
+                height: clamp(280px, 46vw, 400px);
+
+                .gh-hero-content {
+                    padding: 24px 20px 28px;
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 767.98px) {
+    .guest-home-page {
+        .introduction-container {
+            .notice-information {
+                min-height: 44px;
+                padding: 8px 16px;
+
+                .clickable-text.gh-notice-btn {
+                    font-size: 0.8125rem;
+                    padding: 5px 16px;
+                }
+            }
+
+            .img-container {
+                height: 280px;
+
+                .center-img {
+                    object-position: 60% 22%;
+                }
+
+                .gh-hero-overlay {
+                    background:
+                        linear-gradient(
+                            180deg,
+                            rgba(15, 23, 42, 0.25) 0%,
+                            rgba(15, 23, 42, 0.16) 38%,
+                            rgba(15, 23, 42, 0.68) 72%,
+                            rgba(15, 23, 42, 0.88) 100%
+                        );
+                }
+
+                .gh-hero-content {
+                    padding: 20px 16px 22px;
+                }
+
+                .introduction-title {
+                    padding-left: 12px;
+                    border-left-width: 3px;
+                    font-size: clamp(1.375rem, 5.5vw, 1.75rem);
+                    line-height: 1.3;
+                }
+            }
+        }
+    }
+
+    .gh-notice-modal {
+        .modal-header {
+            padding: 14px 18px;
+        }
+
+        .modal-body {
+            padding: 18px;
+        }
+
+        .gh-notice-modal__body {
+            font-size: 1rem;
+            line-height: 1.65;
+        }
+
+        .modal-footer {
+            padding: 12px 18px;
+        }
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .guest-home-page {
+        .introduction-container {
+            .notice-information {
+                .clickable-text.gh-notice-btn {
+                    animation: none;
+                    transition: none;
+                }
+            }
+        }
+    }
+
+    .gh-notice-modal {
+        .gh-notice-modal__close {
+            transition: none;
+        }
     }
 }

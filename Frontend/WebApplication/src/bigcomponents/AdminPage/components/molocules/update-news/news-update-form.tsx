@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import './news-update-form.scss';
 import api from '../../../../../config/axios';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 function UpdateNewsForm() {
@@ -58,15 +58,23 @@ function UpdateNewsForm() {
 
     return (
         <div className='update-news-container'>
-            <div className='update-news-title'>
-                <h1 className='text-center text-uppercase'>Cập nhật tin tức</h1>
-            </div>
+            <Link className="update-news-back-link" to="/quan-ly-tin-tuc">
+                <span aria-hidden="true">←</span> Quay lại danh sách tin tức
+            </Link>
+            <header className='update-news-title'>
+                <h1>Cập nhật tin tức</h1>
+                <p>Chỉnh sửa thông tin và nội dung bài viết.</p>
+            </header>
             <div className='update-news-form'>
-                {error && <h5 className="error-message mb-3 text-danger">{error}</h5>}
-                <form onSubmit={handleSubmit}>
-                    <div className='form-group row'>
-                        <label htmlFor="title" className="col-sm-3 col-form-label">Tiêu đề: </label>
-                        <div className="col-sm-9">
+                <section className="news-form-card" aria-labelledby="update-news-heading">
+                    <div className="news-form-card-heading">
+                        <h2 id="update-news-heading">Thông tin tin tức</h2>
+                        <p>Các trường có dấu * là bắt buộc.</p>
+                    </div>
+                    {error && <p className="error-message" role="alert">{error}</p>}
+                    <form onSubmit={handleSubmit}>
+                        <div className='news-form-field'>
+                            <label htmlFor="title" className="news-form-label">Tiêu đề <span aria-hidden="true">*</span></label>
                             <input
                                 type="text"
                                 className="form-control"
@@ -77,10 +85,8 @@ function UpdateNewsForm() {
                                 onChange={e => setInputData({ ...inputData, title: e.target.value })}
                             />
                         </div>
-                    </div>
-                    <div className='form-group row'>
-                        <label htmlFor="description" className="col-sm-3 col-form-label">Mô tả: </label>
-                        <div className="col-sm-9">
+                        <div className='news-form-field'>
+                            <label htmlFor="description" className="news-form-label">Mô tả</label>
                             <input
                                 type="text"
                                 className="form-control"
@@ -91,26 +97,28 @@ function UpdateNewsForm() {
                                 onChange={e => setInputData({ ...inputData, description: e.target.value })}
                             />
                         </div>
-                    </div>
-                    <div className='form-group row'>
-                        <label htmlFor="content" className="col-sm-3 col-form-label">Nội dung: </label>
-                        <div className="col-sm-9 text-box row">
+                        <div className='news-form-field news-form-field--content'>
+                            <label htmlFor="content" className="news-form-label">Nội dung <span aria-hidden="true">*</span></label>
+                            <div className="news-content-field">
                             <textarea
-                                className="form-control"
+                                className="form-control news-form-textarea"
                                 id="content"
                                 placeholder="nội dung"
-                                style={{ resize: 'none', height: '200px' }}
                                 name='content'
                                 value={inputData.content}
                                 onChange={e => setInputData({ ...inputData, content: e.target.value })}
                             />
                             <button className='btn btn-warning clear-text-btn' type='button' onClick={() => setInputData({ ...inputData, content: '' })}>
-                                Clear Text
+                                Xóa nội dung
                             </button>
+                            </div>
                         </div>
-                    </div>
-                    <button className='btn btn-primary w-25' type='submit'>Cập nhật</button>
-                </form>
+                        <div className="news-form-actions">
+                            <button className="news-cancel-button" type="button" onClick={() => navigate('/quan-ly-tin-tuc')}>Hủy</button>
+                            <button className="news-submit-button" type="submit">Cập nhật</button>
+                        </div>
+                    </form>
+                </section>
             </div>
         </div>
     );

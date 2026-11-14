@@ -1,23 +1,282 @@
-.create-news-container {
+.create-news-container,
+.update-news-container {
+    width: min(100%, 960px);
+    margin: 0 auto;
+    padding: 28px 32px 40px;
+    color: #0f172a;
 
-    .create-news-title {
+    .create-news-title,
+    .update-news-title {
+        margin-bottom: 24px;
+
         h1 {
-            text-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+            margin: 0;
+            font-size: clamp(1.5rem, 2vw, 1.875rem);
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        p {
+            margin: 7px 0 0;
+            color: #64748b;
         }
     }
 
-    .create-news-form {
-        margin-top: 70px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
+    .create-news-form,
+    .update-news-form {
+        .news-form-card {
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        }
+
+        .news-form-card-heading {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e2e8f0;
+
+            h2 {
+                margin: 0;
+                font-size: 1.05rem;
+                font-weight: 650;
+            }
+
+            p {
+                margin: 5px 0 0;
+                color: #64748b;
+                font-size: 0.875rem;
+            }
+        }
+
+        .error-message {
+            margin: 18px 24px 0;
+            padding: 10px 12px;
+            border: 1px solid #fecaca;
+            border-radius: 5px;
+            background: #fef2f2;
+            color: #b91c1c;
+        }
 
         form {
             display: grid;
-            gap: 26px;
-            width: 60%;
+            gap: 20px;
+            padding: 24px;
         }
 
+        .news-form-field {
+            display: grid;
+            gap: 8px;
+        }
+
+        .news-form-label {
+            color: #334155;
+            font-size: 0.9rem;
+            font-weight: 600;
+
+            span {
+                color: #b91c1c;
+            }
+        }
+
+        .form-control {
+            min-height: 44px;
+            border-color: #cbd5e1;
+            border-radius: 5px;
+
+            &:focus {
+                border-color: #1e62b6;
+                box-shadow: 0 0 0 3px rgba(30, 98, 182, 0.14);
+            }
+        }
+
+        .news-form-textarea {
+            min-height: 180px;
+            resize: vertical;
+        }
+
+        .clear-text-btn {
+            padding: 5px 10px;
+            border: 0;
+            background: transparent;
+            color: #1e62b6;
+            font-size: 0.85rem;
+
+            &:hover {
+                background: #eff6ff;
+                color: #174f94;
+            }
+        }
+
+        .news-form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding-top: 4px;
+        }
+
+        .news-cancel-button,
+        .news-submit-button {
+            min-height: 42px;
+            padding: 0 16px;
+            border: 1px solid transparent;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 150ms ease, border-color 150ms ease;
+
+            &:focus-visible {
+                outline: 3px solid rgba(30, 98, 182, 0.25);
+                outline-offset: 2px;
+            }
+        }
+
+        .news-cancel-button {
+            border-color: #cbd5e1;
+            background: #fff;
+            color: #334155;
+
+            &:hover {
+                background: #f8fafc;
+            }
+        }
+
+        .news-submit-button {
+            border-color: #1e62b6;
+            background: #1e62b6;
+            color: #fff;
+
+            &:hover {
+                border-color: #174f94;
+                background: #174f94;
+            }
+        }
+    }
+}
+
+@media (max-width: 767px) {
+    .create-news-container,
+    .update-news-container {
+        padding: 20px 16px 28px;
+
+        .create-news-form,
+        .update-news-form {
+            .news-form-card-heading,
+            form {
+                padding: 18px 16px;
+            }
+
+            .error-message {
+                margin: 16px 16px 0;
+            }
+
+            .news-form-actions {
+                flex-direction: column-reverse;
+
+                button {
+                    width: 100%;
+                }
+            }
+        }
+    }
+}
+
+.create-news-container {
+    .create-news-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        min-height: 36px;
+        margin-bottom: 18px;
+        color: #1e62b6;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+
+        &:hover {
+            color: #174f94;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        &:focus-visible {
+            border-radius: 4px;
+            outline: 3px solid rgba(30, 98, 182, 0.22);
+            outline-offset: 3px;
+        }
+    }
+
+    .create-news-title {
+        margin-bottom: 26px;
+    }
+
+    .create-news-form {
+        .news-form-card-heading {
+            padding: 18px 28px;
+        }
+
+        form {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 22px 24px;
+            padding: 26px 28px 28px;
+        }
+
+        .news-form-field {
+            min-width: 0;
+        }
+
+        .news-form-field--content,
+        .news-form-actions {
+            grid-column: 1 / -1;
+        }
+
+        .news-form-actions {
+            margin-top: 2px;
+        }
+
+        .news-submit-button:disabled {
+            border-color: #94a3b8;
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+    }
+}
+
+@media (max-width: 767px) {
+    .create-news-container {
+        .create-news-back-link {
+            margin-bottom: 14px;
+        }
+
+        .create-news-title {
+            margin-bottom: 20px;
+        }
+
+        .create-news-form {
+            .news-form-card-heading,
+            form {
+                padding-right: 16px;
+                padding-left: 16px;
+            }
+
+            form {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 18px;
+            }
+
+            .news-form-field--content,
+            .news-form-actions {
+                grid-column: auto;
+            }
+
+            .news-form-actions {
+                flex-direction: row;
+                justify-content: flex-end;
+
+                button {
+                    width: auto;
+                }
+            }
+        }
     }
 }

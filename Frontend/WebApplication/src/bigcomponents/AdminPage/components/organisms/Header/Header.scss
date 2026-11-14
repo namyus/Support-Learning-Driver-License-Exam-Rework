@@ -1,22 +1,283 @@
-.menu-icon {
-    color: black;
-}
+.admin-layout {
+  .Header {
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
 
-.icon {
-    color: #4292EB;
-    height: 25px;
-    width: 25px;
-}
+    .menu-icon {
+      display: none;
+      align-items: center;
+    }
 
-.header-right {
-    p {
-        font-size: 18px;
-        text-align: center;
+    .menu-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background-color: #ffffff;
+      color: #0f172a;
+      cursor: pointer;
+      transition: background-color 0.18s ease, border-color 0.18s ease,
+        color 0.18s ease;
+
+      .icon {
+        width: 22px;
+        height: 22px;
+        color: currentColor;
+      }
+
+      &:hover {
+        background-color: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #1e62b6;
+      }
+
+      &:focus-visible {
+        outline: 2px solid #1e62b6;
+        outline-offset: 2px;
+      }
+    }
+
+    .header-context {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background-color: rgba(30, 98, 182, 0.1);
+      color: #1e62b6;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .header-title {
+      color: #0f172a;
+      font-size: 0.95rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-right {
+      position: relative;
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .profile-trigger-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 12px 6px 8px;
+      border: 1px solid #e2e8f0;
+      border-radius: 999px;
+      background-color: #ffffff;
+      color: #0f172a;
+      cursor: pointer;
+      transition: background-color 0.18s ease, border-color 0.18s ease,
+        box-shadow 0.18s ease;
+
+      &:hover,
+      &.is-open {
+        background-color: #f8fafc;
+        border-color: #cbd5e1;
+      }
+
+      &:focus-visible {
+        outline: 2px solid #1e62b6;
+        outline-offset: 2px;
+      }
+    }
+
+    .profile-avatar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: rgba(30, 98, 182, 0.12);
+      color: #1e62b6;
+      flex-shrink: 0;
+
+      .icon {
+        width: 20px;
+        height: 20px;
+        color: #1e62b6;
+      }
+    }
+
+    .profile-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      line-height: 1.2;
+      text-align: left;
+    }
+
+    .profile-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #0f172a;
+      max-width: 140px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .profile-role {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: #475569;
+    }
+
+    .profile-chevron {
+      width: 13px;
+      height: 13px;
+      color: #475569;
+      transition: transform 0.2s ease;
+
+      &.is-open {
+        transform: rotate(180deg);
+      }
+    }
+
+    .profile-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 220px;
+      padding: 6px;
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12),
+        0 4px 10px -4px rgba(15, 23, 42, 0.08);
+      z-index: 50;
+    }
+
+    .profile-dropdown-header {
+      padding: 8px 12px;
+
+      .dropdown-user-name {
         margin: 0;
-        padding: 15px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #0f172a;
+        text-align: left;
+      }
+
+      .dropdown-user-role {
+        margin: 2px 0 0;
+        font-size: 0.75rem;
+        color: #475569;
+        text-align: left;
+      }
     }
 
-    button {
-        display: block;
+    .profile-dropdown-divider {
+      height: 1px;
+      margin: 4px 0;
+      background-color: #e2e8f0;
     }
+
+    .profile-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 9px 12px;
+      border: none;
+      border-radius: 8px;
+      background-color: transparent;
+      color: #0f172a;
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease;
+
+      .dropdown-item-icon {
+        width: 16px;
+        height: 16px;
+        color: #475569;
+        flex-shrink: 0;
+      }
+
+      &:hover {
+        background-color: #f1f5f9;
+        color: #1e62b6;
+
+        .dropdown-item-icon {
+          color: #1e62b6;
+        }
+      }
+
+      &:focus-visible {
+        outline: 2px solid #1e62b6;
+        outline-offset: -2px;
+        background-color: #f1f5f9;
+      }
+
+      &--danger {
+        color: #dc2626;
+
+        .dropdown-item-icon {
+          color: #dc2626;
+        }
+
+        &:hover {
+          background-color: #fef2f2;
+          color: #b91c1c;
+
+          .dropdown-item-icon {
+            color: #b91c1c;
+          }
+        }
+      }
+    }
+  }
+
+  @media screen and (max-width: 992px) {
+    .Header {
+      .menu-icon {
+        display: inline-flex;
+      }
+    }
+  }
+
+  @media screen and (max-width: 640px) {
+    .Header {
+      .header-title {
+        display: none;
+      }
+
+      .profile-meta {
+        display: none;
+      }
+
+      .profile-trigger-btn {
+        padding: 5px 8px;
+        gap: 6px;
+      }
+    }
+  }
 }

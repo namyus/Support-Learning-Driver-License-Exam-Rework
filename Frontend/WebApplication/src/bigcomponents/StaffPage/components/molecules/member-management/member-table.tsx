@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect, useMemo, useCallback } from 'react'
 import './member-table.scss'
 import api from '../../../../../config/axios';
 import { toast } from 'react-toastify';
@@ -7,21 +7,24 @@ import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/esm/Button';
 import VNnum2words from 'vn-num2words';
 
+interface MemberRecord { memberID: number | string; fullName: string; phone?: string; email?: string; courseId: string; isPaid: boolean }
+interface StaffRecord { staffId: number; fullName: string }
+interface MemberDetails { memberID: number | string; fullName: string }
+interface CourseDetails { courseId: string; courseFee: number }
+
 function MemberTable() {
-  const user = JSON.parse(sessionStorage.getItem('loginedUser'));
-  const [staff, setStaff] = useState(null);
-  const [member, setMember] = useState<any[]>([])
+  const user = JSON.parse(sessionStorage.getItem('loginedUser') || '{}') as { userID: number };
+  const [staff, setStaff] = useState<StaffRecord | null>(null);
+  const [member, setMember] = useState<MemberRecord[]>([]);
   const [searchValue, setSearchValue] = useState('');
-  const [specificMember, setSpecificMember] = useState(null);
+  const [paymentFilter, setPaymentFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [specificMember, setSpecificMember] = useState<MemberDetails | null>(null);
   const navigate = useNavigate();
-  const [specificCourse, setSpecificCourse] = useState(null);
+  const [specificCourse, setSpecificCourse] = useState<CourseDetails | null>(null);
   const [specificInfoLoaded, setSpecificInfoLoaded] = useState(false);
-  const [inputData, setInputData] = useState({
-    staffId: "",
-    memberId: "",
-    amountPaid: 0,
-    amountInWords: ""
-  });
+  const [inputData, setInputData] = useState<{ staffId: number | string; memberId: number | string; amountPaid: number; amountInWords: string }>({ staffId: '', memberId: '', amountPaid: 0, amountInWords: '' });
+  const recordPage = 10;
 
   const formatDate = (dbDate) => {
     const date = new Date(dbDate);
@@ -37,275 +40,158 @@ function MemberTable() {
   }
 
   const [show, setShow] = useState(false);
-  const handleClose = () => {
-    setShow(false)
-  };
-  const handleShow = () => {
-    setShow(true);
-  }
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
 
-  const getSpecificInformation = async (memberID, courseId) => {
+  const getSpecificInformation = useCallback(async (memberID: number | string, courseId: string) => {
     try {
-      const response1 = await api.get("Member?memberId=" + memberID);
-      const res1 = response1.data;
-      setSpecificMember(res1);
-      const response2 = await api.get("Course/" + courseId);
-      const res2 = response2.data;
-      setSpecificCourse(res2);
-      setSpecificInfoLoaded(true); // Set the flag when the information is loaded
+      const response1 = await api.get('Member?memberId=' + memberID);
+      setSpecificMember(response1.data);
+      const response2 = await api.get('Course/' + courseId);
+      setSpecificCourse(response2.data);
+      setSpecificInfoLoaded(true);
     } catch (err) {
       console.log(err);
     }
-  }
+  }, []);
 
-  const filteredData = member.filter(member => member.fullName.toLowerCase().includes(searchValue));
-
-  const getStaffByUID = async () => {
+  const getStaffByUID = useCallback(async () => {
     try {
-      const response = await api.get("Staff/user/" + user.userID);
-      const res = response.data;
-      setStaff(res);
+      const response = await api.get('Staff/user/' + user.userID);
+      setStaff(response.data);
     } catch (err) {
       console.log(err);
     }
-  }
+  }, [user.userID]);
 
-  const getAllMembers = async () => {
+  const getAllMembers = useCallback(async () => {
     const response = await api.get('/Members');
-    const res = response.data;
-    setMember(res);
-  }
+    setMember(Array.isArray(response.data) ? response.data : []);
+  }, []);
 
   const updateMemberIsPaidAndFetchData = async () => {
     try {
-      // New API to adding member to student if his/her payment is True
-      await api.post("Invoice/create", inputData);
-      const notificationMessage = "Cập nhật thanh toán thành công!";
-      localStorage.setItem("notificationMessage", notificationMessage);
+      await api.post('Invoice/create', inputData);
+      const notificationMessage = 'Cập nhật thanh toán thành công!';
+      localStorage.setItem('notificationMessage', notificationMessage);
       location.reload();
     } catch (err) {
       console.log(err);
     }
   }
 
-  const filter = (e) => {
-    const value = e.target.value.toLowerCase();
-    setSearchValue(value);
-    setCurrentPage(1);
-  }
+  const handleApplication = (memberId: number | string) => navigate('don-thi/' + memberId);
 
-  const handleApplication = (memberId) => {
-    navigate('don-thi/' + memberId);
-  }
+  const filteredMembers = useMemo(() => {
+    const query = searchValue.trim().toLocaleLowerCase('vi');
+    return member.filter((record) => {
+      if (paymentFilter === 'paid' && !record.isPaid) return false;
+      if (paymentFilter === 'unpaid' && record.isPaid) return false;
+      if (!query) return true;
+      return [record.memberID, record.fullName, record.phone, record.email, record.courseId]
+        .some((value) => String(value ?? '').toLocaleLowerCase('vi').includes(query));
+    });
+  }, [member, searchValue, paymentFilter]);
 
-  //paganition part
-  const [currentPage, setCurrentPage] = useState(1);
-  const recordPage = 10;
-  const lastIndex = currentPage * recordPage;
-  const firsIndex = lastIndex - recordPage;
-  const records = filteredData.slice(firsIndex, lastIndex);
-  const npage = Math.ceil(member.length / recordPage);
-  const numbers = [...Array(npage + 1).keys()].slice(1)
-
-  const prePage = () => {
-    if (currentPage !== 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  }
-
-  const changeCPage = (id: number) => {
-    setCurrentPage(id);
-  }
-
-  const nextPage = () => {
-    if (currentPage !== npage) {
-      setCurrentPage(currentPage + 1);
-    }
-    console.log(npage);
-  }
+  const paidCount = member.filter((record) => record.isPaid).length;
+  const unpaidCount = member.filter((record) => !record.isPaid).length;
+  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / recordPage));
+  const safePage = Math.min(currentPage, totalPages);
+  const firstIndex = (safePage - 1) * recordPage;
+  const records = filteredMembers.slice(firstIndex, firstIndex + recordPage);
 
   useEffect(() => {
     getAllMembers();
     getStaffByUID();
-    const notification = localStorage.getItem("notificationMessage");
+    const notification = localStorage.getItem('notificationMessage');
     if (notification) {
       toast.success(notification);
-      localStorage.removeItem("notificationMessage"); // Remove the message from localStorage
+      localStorage.removeItem('notificationMessage');
     }
-  }, [])
+  }, [getAllMembers, getStaffByUID])
 
   useEffect(() => {
-    const storedNotificationMessage = localStorage.getItem("notificationMessage");
-
+    const storedNotificationMessage = localStorage.getItem('notificationMessage');
     if (storedNotificationMessage) {
       toast.success(storedNotificationMessage);
-      localStorage.removeItem("notificationMessage"); // Remove the message from localStorage
+      localStorage.removeItem('notificationMessage');
     }
   }, []);
 
   useEffect(() => {
-    // Check if specific information is loaded before updating inputData
-    if (specificMember && specificCourse && specificInfoLoaded) {
-      setInputData({
-        ...inputData,
+    if (specificMember && specificCourse && specificInfoLoaded && staff) {
+      setInputData((currentInput) => ({
+        ...currentInput,
         staffId: staff.staffId,
         memberId: specificMember.memberID,
         amountPaid: specificCourse.courseFee,
-        amountInWords: capitalizeFirstLetter(VNnum2words(specificCourse.courseFee) + "đồng")
-      });
+        amountInWords: capitalizeFirstLetter(VNnum2words(specificCourse.courseFee) + 'đồng')
+      }));
     }
-  }, [specificMember, specificCourse, specificInfoLoaded, show]); // Add show as a dependency
+  }, [specificMember, specificCourse, specificInfoLoaded, show, staff]);
 
   return (
-    <div className='member-table-container'>
-      <div className="member-table-title text-center text-uppercase">
-        <h1>Danh sách thành viên</h1>
-      </div>
-      <div className='member-table-content'>
-        <form action="">
-          <div className='search-input col align-self-center tw-mb-2'>
-            <input
-              type="text"
-              name='courseId'
-              placeholder='tên thành viên'
-              onChange={filter}
-              autoComplete='off'
-            />
+    <div className="member-table-container staff-list-page">
+      <header className="staff-list-header">
+        <div><h1>Danh sách thành viên</h1><p>Tra cứu thông tin thành viên và trạng thái thanh toán khóa học.</p></div>
+      </header>
+      <section className="staff-summary-strip" aria-label="Tổng quan thành viên">
+        <div className="staff-summary-pill"><span className="staff-summary-pill__label">Tổng thành viên đã tải</span><strong className="staff-summary-pill__value">{member.length}</strong></div>
+        <div className="staff-summary-pill staff-summary-pill--success"><span className="staff-summary-pill__label">Đã thanh toán</span><strong className="staff-summary-pill__value">{paidCount}</strong></div>
+        <div className="staff-summary-pill staff-summary-pill--muted"><span className="staff-summary-pill__label">Chưa thanh toán</span><strong className="staff-summary-pill__value">{unpaidCount}</strong></div>
+      </section>
+      <p className="staff-metrics-note">Số liệu tính trên các thành viên được tải từ API /Members.</p>
+
+      <section className="staff-table-card" aria-label="Danh sách thành viên">
+        <div className="staff-table-toolbar">
+          <div className="staff-table-toolbar__search">
+            <label className="staff-sr-only" htmlFor="staff-member-search">Tìm thành viên</label>
+            <input id="staff-member-search" className="staff-search-input" type="search" placeholder="Tìm theo mã, họ tên, điện thoại, email hoặc khóa học..." value={searchValue} onChange={(event) => { setSearchValue(event.target.value); setCurrentPage(1); }} autoComplete="off" />
           </div>
-          <table className='table table-hover table-striped' border={1}>
-            <thead className='table-primary'>
-              <tr>
-                <th scope='col'>Mã thành viên</th>
-                <th scope='col'>Họ và Tên</th>
-                <th scope='col'>Điện thoại</th>
-                <th scope='col'>Email</th>
-                <th scope='col' className='tw-text-center'>Khoá học đang học</th>
-                <th scope='col' className='text-center'>Trạng thái thanh toán</th>
-                <th scope='col' className='text-center tw-w-72'></th>
+          <div className="staff-table-toolbar__filters">
+            <div className="staff-filter-group"><label className="staff-filter-label" htmlFor="staff-member-payment-filter">Thanh toán</label>
+            <select id="staff-member-payment-filter" className="staff-filter-select" value={paymentFilter} onChange={(event) => { setPaymentFilter(event.target.value); setCurrentPage(1); }}>
+              <option value="all">Tất cả ({member.length})</option><option value="paid">Đã thanh toán ({paidCount})</option><option value="unpaid">Chưa thanh toán ({unpaidCount})</option>
+            </select></div>
+          </div>
+        </div>
+        <div className="staff-table-scroll">
+          <table className="table staff-data-table">
+            <thead><tr><th scope="col">Mã thành viên</th><th scope="col">Họ và tên</th><th scope="col">Điện thoại</th><th scope="col">Email</th><th scope="col" className="col-center">Khóa học đang học</th><th scope="col" className="col-center">Trạng thái thanh toán</th><th scope="col" className="col-actions">Thao tác</th></tr></thead>
+            <tbody>{records.length > 0 ? records.map((record) => (
+              <tr key={record.memberID}>
+                <td><span className="staff-id-badge">#{record.memberID}</span></td><td className="cell-strong">{record.fullName}</td><td className="cell-mono">{record.phone}</td><td>{record.email}</td><td className="col-center"><span className="staff-course-tag">{record.courseId}</span></td>
+                <td className="col-center"><span className={`status-badge ${record.isPaid ? 'status-badge--active' : 'status-badge--inactive'}`}>{record.isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'}</span></td>
+                <td className="col-actions"><div className="row-actions">
+                  <button className="action-btn action-btn--edit" type="button" disabled={record.isPaid} onClick={() => { setSpecificInfoLoaded(false); getSpecificInformation(record.memberID, record.courseId); handleShow(); }}>Thanh toán</button>
+                  <button className="action-btn action-btn--view" type="button" onClick={() => handleApplication(record.memberID)}>Đơn thi</button>
+                  <button className="action-btn action-btn--delete" type="button">Xóa</button>
+                </div></td>
               </tr>
-            </thead>
-            <tbody className='table-group-divider align-middle'>
-              {records.length > 0 ? (
-                records.map((member, i) => (
-                  <tr key={i}>
-                    <td>{member.memberID}</td>
-                    <td>{member.fullName}</td>
-                    <td>{member.phone}</td>
-                    <td>{member.email}</td>
-                    <td className='tw-text-center'>{member.courseId}</td>
-                    <td className='text-center'>{member.isPaid ? "Đã thanh toán" : "Chưa thanh toán"}</td>
-                    <td className='button text-center'>
-                      {
-                        member.isPaid ? (
-                          <button className="btn btn-primary"
-                            type="button"
-                            onClick={() => {
-                              setSpecificInfoLoaded(false); // Reset the flag before fetching specific information
-                              getSpecificInformation(member.memberID, member.courseId);
-                              handleShow();
-                            }}
-                            disabled>Thanh toán</button>
-                        ) : (
-                          <button className="btn btn-primary" type="button" onClick={() => {
-                            setSpecificInfoLoaded(false); // Reset the flag before fetching specific information
-                            getSpecificInformation(member.memberID, member.courseId);
-                            handleShow();
-                          }}>Thanh toán</button>
-                        )
-                      }
-                      <button className="btn btn-info" type="button" onClick={(e) => handleApplication(member.memberID)}>Đơn thi</button>
-                      <button className="btn btn-danger" type="submit">Xoá</button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={7}>
-                    <h1 className='text-center text-red-600 p-5 tw-text-realRed'>
-                      Không tìm thấy thông tin. Vui lòng kiểm tra lại!
-                    </h1>
-                  </td>
-                </tr>
-              )
-              }
-            </tbody>
+            )) : <tr><td colSpan={7}><div className="staff-table-state">{member.length ? 'Không tìm thấy thành viên phù hợp với bộ lọc hiện tại.' : 'Hiện chưa có dữ liệu thành viên.'}</div></td></tr>}</tbody>
           </table>
-          <nav>
-            <ul className='pagination'>
-              <li className='page-item'>
-                <button type='button' className='page-link' onClick={prePage}>Prev</button>
-              </li>
-              {
-                numbers.map((n, i) => (
-                  <li className={`page-item ${currentPage === n ? 'active' : ''}`} key={i}>
-                    <button type='button' className='page-link' onClick={() => changeCPage(n)}>{n}</button>
-                  </li>
-                ))
-              }
-              <li className='page-item'>
-                <button type='button' className='page-link' onClick={nextPage}>Next</button>
-              </li>
-            </ul>
-          </nav>
-        </form>
-      </div>
-      <Modal
-        show={show}
-        onHide={handleClose}
-        backdrop="static"
-        keyboard={true}
-        backdropClassName='backdrop'
-        centered
-        size='lg'
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>
-            <h1 className='tw-text-center'>Xác nhận thanh toán</h1>
-          </Modal.Title>
-        </Modal.Header>
+        </div>
+        <footer className="staff-table-footer">
+          <span className="staff-table-footer__info">Hiển thị {records.length ? firstIndex + 1 : 0}–{Math.min(firstIndex + recordPage, filteredMembers.length)} trong {filteredMembers.length} thành viên</span>
+          {filteredMembers.length > 0 && <nav aria-label="Phân trang thành viên"><ul className="pagination">
+            <li className={`page-item ${safePage === 1 ? 'disabled' : ''}`}><button type="button" className="page-link" disabled={safePage === 1} onClick={() => setCurrentPage(safePage - 1)}>Trước</button></li>
+            {Array.from({ length: totalPages }, (_, index) => <li key={index} className={`page-item ${safePage === index + 1 ? 'active' : ''}`}><button type="button" className="page-link" onClick={() => setCurrentPage(index + 1)}>{index + 1}</button></li>)}
+            <li className={`page-item ${safePage === totalPages ? 'disabled' : ''}`}><button type="button" className="page-link" disabled={safePage === totalPages} onClick={() => setCurrentPage(safePage + 1)}>Sau</button></li>
+          </ul></nav>}
+        </footer>
+      </section>
+
+      <Modal show={show} onHide={handleClose} backdrop="static" keyboard centered size="lg" backdropClassName="backdrop">
+        <Modal.Header closeButton><Modal.Title><h1 className="tw-text-center">Xác nhận thanh toán</h1></Modal.Title></Modal.Header>
         <Modal.Body>
-          <div className='course-information-container'>
-            <div className='course-information-title'>
-              <h3></h3>
-            </div>
-            {
-              specificMember && staff && specificCourse ? (
-                <>
-                  <div>
-                    <ul className='tw-flex tw-flex-col tw-gap-2 tw-text-lg'>
-                      <li>
-                        <label htmlFor="member-name">Học viên: {specificMember.fullName}
-                          <input type="text" value={specificMember.memberID} hidden />
-                        </label>
-                      </li>
-                      <li>
-                        <label htmlFor="staff-name">Nhân viên xác nhận: {staff.fullName}</label>
-                      </li>
-                      <li>
-                        <label htmlFor="course-study">Khoá học: {(specificCourse.courseId)}</label>
-                      </li>
-                      <li>
-                        <label htmlFor="invoice-date">Ngày thanh toán: {invoiceDate}</label>
-                      </li>
-                      <li>
-                        <label htmlFor="course-fee">Học phí: {specificCourse.courseFee.toLocaleString()}VNĐ</label>
-                      </li>
-                      <li>
-                        <label htmlFor="fee-words">Thành tiền: {capitalizeFirstLetter(VNnum2words(specificCourse.courseFee) + "đồng")}</label>
-                      </li>
-                    </ul>
-                  </div>
-                </>
-              ) : null
-            }
+          <div className="course-information-container"><div className="course-information-title"><h3></h3></div>
+            {specificMember && staff && specificCourse ? <div><ul className="tw-flex tw-flex-col tw-gap-2 tw-text-lg">
+              <li><label htmlFor="member-name">Học viên: {specificMember.fullName}<input type="text" value={specificMember.memberID} hidden readOnly /></label></li>
+              <li><label htmlFor="staff-name">Nhân viên xác nhận: {staff.fullName}</label></li><li><label htmlFor="course-study">Khóa học: {specificCourse.courseId}</label></li><li><label htmlFor="invoice-date">Ngày thanh toán: {invoiceDate}</label></li><li><label htmlFor="course-fee">Học phí: {specificCourse.courseFee.toLocaleString()}VNĐ</label></li><li><label htmlFor="fee-words">Thành tiền: {capitalizeFirstLetter(VNnum2words(specificCourse.courseFee) + 'đồng')}</label></li>
+            </ul></div> : null}
           </div>
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Đóng
-          </Button>
-          <Button className='btn' onClick={() => updateMemberIsPaidAndFetchData()}>Xác nhận</Button>
-        </Modal.Footer>
+        <Modal.Footer><Button variant="secondary" onClick={handleClose}>Đóng</Button><Button className="btn" onClick={() => updateMemberIsPaidAndFetchData()}>Xác nhận</Button></Modal.Footer>
       </Modal>
     </div>
   )

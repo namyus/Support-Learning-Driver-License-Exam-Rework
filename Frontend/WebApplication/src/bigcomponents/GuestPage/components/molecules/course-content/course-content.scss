@@ -52,3 +52,128 @@
         }
     }
 }
+
+/* ==========================================================================
+   Redesigned Guest Course Content — Scoped to .guest-home-page
+   ========================================================================== */
+.guest-home-page {
+    .course-content-container {
+        width: 100%;
+        max-width: var(--gh-container-max, 1200px);
+        margin: 56px auto 0;
+        padding: 0 24px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+
+        .course-theory,
+        .course-practice {
+            margin: 0;
+            padding: 32px;
+            background-color: var(--gh-bg-surface, #FFFFFF);
+            border: 1px solid var(--gh-border-subtle, #E2E8F0);
+            border-left: 4px solid var(--gh-brand-primary, #1E62B6);
+            border-radius: var(--gh-radius-md, 12px);
+            box-shadow: var(--gh-shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04));
+        }
+
+        .course-theory-title,
+        .course-practice-title {
+            margin: 0;
+            padding: 0;
+            font-size: clamp(1.25rem, 2vw, 1.5rem);
+            font-weight: 700;
+            line-height: 1.3;
+            color: var(--gh-brand-primary, #1E62B6);
+        }
+
+        .course-theory-content {
+            margin: 14px 0 0;
+            font-size: 1rem;
+            line-height: 1.75;
+            color: var(--gh-text-secondary, #334155);
+        }
+
+        .course-practice-subtitle {
+            margin: 12px 0 20px;
+            padding: 0;
+            font-size: 1.0625rem;
+            font-weight: 600;
+            line-height: 1.5;
+            color: var(--gh-text-primary, #0F172A);
+        }
+
+        .gh-practice-stages {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .gh-practice-stage-item {
+            padding: 20px 24px;
+            background-color: #F8FAFC;
+            border: 1px solid var(--gh-border-subtle, #E2E8F0);
+            border-radius: var(--gh-radius-sm, 8px);
+            font-size: 0.96875rem;
+            line-height: 1.7;
+            color: var(--gh-text-secondary, #334155);
+            list-style: none;
+
+            strong {
+                color: var(--gh-text-primary, #0F172A);
+                font-weight: 700;
+            }
+        }
+
+        .driving-skills.gh-driving-skills {
+            margin: 16px 0 0;
+            padding: 16px 20px 16px 36px;
+            background-color: var(--gh-bg-surface, #FFFFFF);
+            border: 1px solid var(--gh-border-subtle, #E2E8F0);
+            border-radius: var(--gh-radius-sm, 8px);
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px 24px;
+
+            li {
+                font-size: 0.9375rem;
+                line-height: 1.55;
+                font-weight: 500;
+                color: var(--gh-text-primary, #0F172A);
+                list-style: disc;
+
+                &::marker {
+                    color: var(--gh-brand-primary, #1E62B6);
+                }
+            }
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .course-content-container {
+            margin-top: 40px;
+            padding: 0 16px;
+            gap: 20px;
+
+            .course-theory,
+            .course-practice {
+                padding: 22px 18px;
+            }
+
+            .gh-practice-stage-item {
+                padding: 16px;
+                font-size: 0.9375rem;
+            }
+
+            .driving-skills.gh-driving-skills {
+                grid-template-columns: 1fr;
+                padding: 14px 16px 14px 32px;
+                gap: 8px;
+            }
+        }
+    }
+}

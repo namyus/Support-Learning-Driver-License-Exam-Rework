@@ -2,10 +2,10 @@ import './course-commitment.scss'
 
 function CourseCommitment() {
     return (
-        <div className='course-commitment-container'>
-            <h1 className="course-commitment-title">
+        <section className='course-commitment-container' aria-labelledby='gh-course-commitment-title'>
+            <h2 id='gh-course-commitment-title' className="course-commitment-title gh-section-title">
                 chúng tôi cam kết
-            </h1>
+            </h2>
             <div className='commitment-content'>
                 <ol>
                     <li>Học phí niêm yết công khai. Học viên nộp học phí trực tiếp tại phòng kế toán của trung tâm và nhận lại biên lai sau khi nộp. Học viên có thể nộp học phí làm 2 đợt.</li>
@@ -16,7 +16,7 @@ function CourseCommitment() {
                     <li>Xe tập lái sử dụng học thực hành theo đúng hạng xe thi.</li>
                 </ol>
             </div>
-        </div>
+        </section>
     )
 }
 

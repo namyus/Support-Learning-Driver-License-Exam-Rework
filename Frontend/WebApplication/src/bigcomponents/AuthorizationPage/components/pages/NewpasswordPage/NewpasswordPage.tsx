@@ -3,13 +3,11 @@ import "react-toastify/dist/ReactToastify.css";
 import NewPassword from "../../molecules/NewPassword/NewPassword";
 import "./index.scss";
 
-const NewpasswordPage:React.FC = () => {
+const NewpasswordPage: React.FC = () => {
   return (
-    <>
-      <div className="newpassword">
-        <NewPassword />
-      </div>
-    </>
+    <main className="newpassword">
+      <NewPassword />
+    </main>
   );
 };
 

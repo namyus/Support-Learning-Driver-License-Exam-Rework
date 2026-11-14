@@ -1,114 +1,93 @@
-import './header.scss'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { useEffect, useRef } from 'react';
+import { BsBoxArrowRight, BsClipboardCheck, BsGraphUp, BsHouseDoor, BsNewspaper, BsPeople, BsPersonGear, BsX } from 'react-icons/bs';
+import { NavLink, useNavigate } from 'react-router-dom';
+import './header.scss';
 
+interface StaffSidebarProps {
+  isOpen: boolean;
+  onNavigate: () => void;
+  onClose: () => void;
+}
 
-function StaffSidebar() {
+function StaffSidebar({ isOpen, onNavigate, onClose }: StaffSidebarProps) {
+  const navigate = useNavigate();
+  const firstLinkRef = useRef<HTMLAnchorElement>(null);
 
-  const styleSidebarCom = ({ isActive }: { isActive: boolean }): React.CSSProperties => {
-    return {
-      paddingLeft: isActive ? '12px' : '0',
-      fontWeight: isActive ? '600' : '',
-      backgroundColor: isActive ? '#3572B8' : '#4292EB',
-      borderLeft: isActive ? '4px solid gray' : 'none',
-      transition: 'background-color 0.3s ease-out, padding-left 0.3s ease-out', // Add a transition to background color
-    };
-  };
-
-  const handleScroll = () => {
-    {
-      window.scroll({
-        top: 0,
-        behavior: 'instant'
-      });
-    }
-  }
-
-  const navigate = useNavigate()
+  useEffect(() => {
+    if (isOpen) firstLinkRef.current?.focus();
+  }, [isOpen]);
 
   const handleLogout = () => {
     sessionStorage.removeItem('loginedUser');
     navigate('/');
     location.reload();
-    handleScroll();
-  }
+    window.scroll({ top: 0, behavior: 'instant' });
+  };
+
+  const linkClassName = ({ isActive }: { isActive: boolean }) =>
+    `staff-sidebar__link${isActive ? ' is-active' : ''}`;
 
   return (
-    <div className='header-container'>
-      <div className="header-title">
-        <h1>Sidebar</h1>
+    <aside
+      id="staff-sidebar"
+      className={`staff-sidebar${isOpen ? ' staff-sidebar--open' : ''}`}
+      aria-label="Điều hướng nhân viên"
+    >
+      <div className="staff-sidebar__brand">
+        <span className="staff-sidebar__brand-mark" aria-hidden="true">FD</span>
+        <span className="staff-sidebar__brand-copy">
+          <strong>FDriving</strong>
+          <span>Staff Portal</span>
+        </span>
+        <button className="staff-sidebar__close" type="button" aria-label="Đóng menu điều hướng" onClick={onClose}>
+          <BsX aria-hidden="true" />
+        </button>
       </div>
-      <div className='staff-sidebar'>
-        <li className='sidebar-component'>
-          <div className="overview">
-            <NavLink style={styleSidebarCom} to='/'>
-              Tổng quan
-            </NavLink>
+
+      <nav className="staff-sidebar__nav" aria-label="Điều hướng chính">
+        <p className="staff-sidebar__section-label">Tổng quan</p>
+        <NavLink ref={firstLinkRef} to="/" end className={linkClassName} onClick={onNavigate}>
+          <BsHouseDoor aria-hidden="true" /><span>Tổng quan</span>
+        </NavLink>
+
+        <p className="staff-sidebar__section-label">Quản lý hệ thống</p>
+        <NavLink to="/quan-ly-thanh-vien" className={linkClassName} onClick={onNavigate}>
+          <BsPeople aria-hidden="true" /><span>Quản lý thành viên</span>
+        </NavLink>
+        <NavLink to="/quan-ly-nguoi-dung" className={linkClassName} onClick={onNavigate}>
+          <BsPersonGear aria-hidden="true" /><span>Quản lý người dùng</span>
+        </NavLink>
+
+        <div className="staff-sidebar__group">
+          <NavLink to="/quan-ly-tin-tuc" className={linkClassName} onClick={onNavigate}>
+            <BsNewspaper aria-hidden="true" /><span>Quản lý tin tức</span>
+          </NavLink>
+          <div className="staff-sidebar__subnav">
+            <NavLink to="/quan-ly-tin-tuc" end className="staff-sidebar__sublink" onClick={onNavigate}>Tin đang hoạt động</NavLink>
+            <NavLink to="/quan-ly-tin-tuc/chua-kich-hoat" className="staff-sidebar__sublink" onClick={onNavigate}>Tin chưa kích hoạt</NavLink>
           </div>
-        </li>
-        {/* Unnecessary features */}
-        {/* <li className='sidebar-component'>
-          <div className="user-manage">
-            <NavLink style={styleSidebarCom} to='/quan-ly-nguoi-dung'>
-              Quản lý người dùng
-            </NavLink>
+        </div>
+
+        <div className="staff-sidebar__group">
+          <NavLink to="/quan-ly-ky-thi" className={linkClassName} onClick={onNavigate}>
+            <BsClipboardCheck aria-hidden="true" /><span>Quản lý kỳ thi</span>
+          </NavLink>
+          <div className="staff-sidebar__subnav">
+            <NavLink to="/quan-ly-ky-thi" end className="staff-sidebar__sublink" onClick={onNavigate}>Danh sách kỳ thi</NavLink>
+            <NavLink to="/quan-ly-ky-thi/tao-ky-thi" className="staff-sidebar__sublink" onClick={onNavigate}>Tạo kỳ thi</NavLink>
           </div>
-        </li> */}
-        {/* This is admin features */}
-        {/* <li className='sidebar-component'>
-          <div className="course-manage">
-            <NavLink style={styleSidebarCom} to='/quan-ly-khoa-hoc'>
-              Quản lý khoá học
-            </NavLink>
-            <div className='course-manage-subnav'>
-              <NavLink to='quan-ly-khoa-hoc/chua-mo'>
-                Các khoá học chưa mở
-              </NavLink>
-            </div>
-          </div>
-        </li> */}
-        <li className='sidebar-component'>
-          <div className="member-manage">
-            <NavLink style={styleSidebarCom} to='/quan-ly-thanh-vien'>
-              Quản lý thành viên
-            </NavLink>
-          </div>
-        </li>
-        <li className='sidebar-component'>
-          <div className="news-container">
-            <NavLink style={styleSidebarCom} to='/quan-ly-tin-tuc'>
-              Quản lý tin tức
-            </NavLink>
-          </div>
-        </li>
-        <li className='sidebar-component'>
-          <div className="exam-container">
-            <NavLink style={styleSidebarCom} to='/quan-ly-ky-thi'>
-              Quản lý kỳ thi
-            </NavLink>
-            {/* <div className='exam-container-subnav'>
-              <NavLink to='quan-ly-ky-thi/bai-thi'>
-                Quản lý bài thi
-              </NavLink>
-            </div> */}
-          </div>
-        </li>
-        <li className='sidebar-component'>
-          <div className="report-manage">
-            <NavLink style={styleSidebarCom} to='/bao-cao'>
-              Báo cáo
-            </NavLink>
-          </div>
-        </li>
-        <li className='sidebar-component'>
-          <div className="logout">
-            <NavLink className='logout-btn' onClick={handleLogout} to='/'>
-              Đăng xuất
-            </NavLink>
-          </div>
-        </li>
-      </div>
-    </div>
-  )
+        </div>
+
+        <NavLink to="/bao-cao" className={linkClassName} onClick={onNavigate}>
+          <BsGraphUp aria-hidden="true" /><span>Báo cáo</span>
+        </NavLink>
+      </nav>
+
+      <button className="staff-sidebar__logout" type="button" onClick={handleLogout}>
+        <BsBoxArrowRight aria-hidden="true" /><span>Đăng xuất</span>
+      </button>
+    </aside>
+  );
 }
 
-export default StaffSidebar
+export default StaffSidebar;

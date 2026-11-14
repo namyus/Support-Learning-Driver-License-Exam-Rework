@@ -1,34 +1,56 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import './course-table.scss'
 import { Link, useParams } from 'react-router-dom'
+import axios from 'axios'
 import api from '../../../../../config/axios';
-import { Backdrop, CircularProgress } from '@mui/material';
+import { CircularProgress } from '@mui/material';
+
+interface CourseDetailItem {
+    courseDetailId?: number;
+    courseContent: string;
+    courseTimeStart: string;
+    courseTimeEnd: string;
+    courseId: string;
+}
+
+interface CourseItem {
+    courseId: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    limitStudent: number;
+    courseFee: number;
+}
+
+interface CourseRowItem extends CourseItem {
+    details: CourseDetailItem[];
+}
 
 function CourseTable() {
-
-    const member = sessionStorage.getItem('loginedMember') ? JSON.parse(sessionStorage.getItem('loginedMember')) : null;
-
     const { month } = useParams();
     const { year } = useParams();
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<CourseRowItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
     }
 
-    const formatDate = (dbDate) => {
+    const formatDate = (dbDate: string) => {
         const date = new Date(dbDate);
         const day = date.getDate().toString().padStart(2, '0');
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
+        const formattedMonth = (date.getMonth() + 1).toString().padStart(2, '0');
+        const formattedYear = date.getFullYear();
+        return `${day}/${formattedMonth}/${formattedYear}`;
     }
 
-    const getCourseData = async (month) => {
+    const getCourseData = useCallback(async (targetMonth?: string) => {
+        setIsLoading(true);
+        setError(null);
         try {
-            const courseResponse = await api.get('Course/courseMonth?month=' + month + '&year=' + year);
-            const courseDetailsResponse = await api.get(`/CourseDetail?courseMonth=${month}`);
+            const courseResponse = await api.get<CourseItem[]>('Course/courseMonth?month=' + targetMonth + '&year=' + year);
+            const courseDetailsResponse = await api.get<CourseDetailItem[]>(`/CourseDetail?courseMonth=${targetMonth}`);
             const validCourse = courseResponse.data.filter(course => {
                 const courseStartDate = new Date(course.startDate);
                 const currentDate = new Date();
@@ -37,127 +59,152 @@ function CourseTable() {
                 return courseStartDate >= currentDate;
             });
 
-            const tempCourseData = validCourse.map(course => {
+            const tempCourseData: CourseRowItem[] = validCourse.map(course => {
                 const detailsForCourse = courseDetailsResponse.data.filter(detail => detail.courseId === course.courseId);
                 return { ...course, details: detailsForCourse };
             });
 
             setData(tempCourseData);
-            setIsLoading(false);
         } catch (err) {
             console.log(err);
+            if (axios.isAxiosError(err) && err.response?.status === 404) {
+                setData([]);
+            } else {
+                setError('Không thể tải thông tin khóa học. Vui lòng thử lại sau.');
+            }
+        } finally {
+            setIsLoading(false);
         }
-    };
+    }, [year]);
 
     useEffect(() => {
         getCourseData(month);
-    }, [month, year])
+    }, [getCourseData, month, year])
 
     return (
-        <>
-            <div className='course-table-container' id='course-nav'>
-                <h1 className='text-center course-title'>Thông tin khoá học</h1>
-                <div className='course-table'>
-                    <form onSubmit={handleSubmit}>
-                        <table>
-                            <caption className='table-title'>
-                                <h2>Các khoá học tháng {month}/{year}</h2>
-                            </caption>
-                            <tr className='content-title'>
-                                <th>Thứ tự</th>
-                                <th className='course-course'>Khoá học</th>
-                                <th>Số lượng</th>
-                                <th>Nội dung đào tạo</th>
-                                <th>Thời gian</th>
-                                <th></th>
-                            </tr>
-                            {
-                                !isLoading ? (
-                                    data.length > 0 ? (
-                                        data.map((course, i) => (
-                                            <tr key={i} >
-                                                <td className='course-no'>
-                                                    <p>{i + 1}</p>
-                                                </td>
-                                                <td className='course-date'>
-                                                    <p>Khoá {course.name}</p>
-                                                    <p>KG: {formatDate(course.startDate)}</p>
-                                                    <p>BG: {formatDate(course.endDate)}</p>
-                                                    <p>Học phí: {course.courseFee.toLocaleString()} VNĐ</p>
-                                                </td>
-                                                <td className='course-mem'>
-                                                    <p>{course.limitStudent}</p>
-                                                </td>
-                                                {
-                                                    course.details.length < 5 ? (
-                                                        <>
-                                                            <td className="course-training-content">
-                                                                <ol>
-                                                                    {course.details.map((detail, j) => (
-                                                                        <li key={j} className=''>{detail.courseContent}</li>
-                                                                    ))}
-                                                                </ol>
-                                                            </td>
-                                                            <td className="course-training-time">
-                                                                <ol>
-                                                                    {course.details.map((detail, j) => (
-                                                                        <li key={j} className=''>
-                                                                            {formatDate(detail.courseTimeStart)} - {formatDate(detail.courseTimeEnd)}
-                                                                        </li>
-                                                                    ))}
-                                                                </ol>
-                                                            </td>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <td className="course-training-content">
-                                                                <ol>
-                                                                    {course.details.map((detail, j) => (
-                                                                        <li key={j} className=''>{detail.courseContent}</li>
-                                                                    ))}
-                                                                </ol>
-                                                            </td>
-                                                            <td className="course-training-time">
-                                                                <ol>
-                                                                    {course.details.map((detail, j) => (
-                                                                        <li key={j} className=''>
-                                                                            {formatDate(detail.courseTimeStart)} - {formatDate(detail.courseTimeEnd)}
-                                                                        </li>
-                                                                    ))}
-                                                                </ol>
-                                                            </td>
-                                                        </>
-                                                    )
-                                                }
-                                                <td className='course-register'>
-                                                    <Link to='/dang-nhap'>
-                                                        <button className='btnRegister btn btn-primary'>Đăng ký</button>
-                                                    </Link>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        <h1>không dữ liệu</h1>
-                                    )
-                                ) : (
-
-                                    <>
-                                        <Backdrop
-                                            sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-                                            open={true}
-                                        >
-                                            <CircularProgress color="inherit" />
-                                        </Backdrop>
-                                    </>
-                                )
-                            }
-                        </table>
-                    </form>
+        <section className='course-table-container' id='course-nav' aria-labelledby='gh-course-page-title'>
+            <div className='gh-course-header'>
+                <div className='gh-course-breadcrumb'>
+                    <Link to='/#course-section' className='gh-course-back-link'>
+                        ← Quay lại danh sách khóa học
+                    </Link>
                 </div>
+                <h1 id='gh-course-page-title' className='text-center course-title gh-section-title'>
+                    Thông tin khoá học
+                </h1>
             </div>
-        </>
 
+            <div className='course-table'>
+                <form onSubmit={handleSubmit}>
+                    <table>
+                        <caption className='table-title'>
+                            <h2>Các khoá học tháng {month}/{year}</h2>
+                        </caption>
+                        <thead>
+                            <tr className='content-title'>
+                                <th scope='col'>Thứ tự</th>
+                                <th scope='col' className='course-course'>Khoá học</th>
+                                <th scope='col'>Số lượng</th>
+                                <th scope='col'>Nội dung đào tạo</th>
+                                <th scope='col'>Thời gian</th>
+                                <th scope='col'><span className='gh-sr-only'>Đăng ký</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {isLoading ? (
+                                <tr className='gh-course-state-row'>
+                                    <td colSpan={6}>
+                                        <div className='gh-course-state' role='status' aria-live='polite'>
+                                            <CircularProgress size={32} className='gh-course-spinner' />
+                                            <p className='gh-course-state-text'>Đang tải thông tin khóa học...</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : error ? (
+                                <tr className='gh-course-state-row'>
+                                    <td colSpan={6}>
+                                        <div className='gh-course-state gh-course-state--error' role='alert'>
+                                            <p className='gh-course-state-text'>{error}</p>
+                                            <button
+                                                type='button'
+                                                className='gh-course-retry-btn'
+                                                onClick={() => getCourseData(month)}
+                                            >
+                                                Thử lại
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : data.length > 0 ? (
+                                data.map((course, i) => (
+                                    <tr key={course.courseId || i} className='gh-course-row'>
+                                        <td className='course-no' data-label='Thứ tự'>
+                                            <p className='gh-course-index'>{i + 1}</p>
+                                        </td>
+                                        <td className='course-date' data-label='Khoá học'>
+                                            <p className='gh-course-name'>Khoá {course.name}</p>
+                                            <p className='gh-course-meta'>
+                                                <span className='gh-meta-label'>KG:</span> {formatDate(course.startDate)}
+                                            </p>
+                                            <p className='gh-course-meta'>
+                                                <span className='gh-meta-label'>BG:</span> {formatDate(course.endDate)}
+                                            </p>
+                                            <p className='gh-course-fee'>
+                                                Học phí: <strong>{course.courseFee.toLocaleString()} VNĐ</strong>
+                                            </p>
+                                        </td>
+                                        <td className='course-mem' data-label='Số lượng'>
+                                            <p className='gh-course-limit'>
+                                                {course.limitStudent} <span className='gh-limit-unit'>học viên</span>
+                                            </p>
+                                        </td>
+                                        <td className='course-training-content' data-label='Nội dung đào tạo'>
+                                            <ol>
+                                                {course.details.map((detail, j) => (
+                                                    <li key={detail.courseDetailId ?? j}>
+                                                        <span className='gh-detail-content'>{detail.courseContent}</span>
+                                                        <span className='gh-detail-time-mobile'>
+                                                            {formatDate(detail.courseTimeStart)} - {formatDate(detail.courseTimeEnd)}
+                                                        </span>
+                                                    </li>
+                                                ))}
+                                            </ol>
+                                        </td>
+                                        <td className='course-training-time' data-label='Thời gian'>
+                                            <ol>
+                                                {course.details.map((detail, j) => (
+                                                    <li key={detail.courseDetailId ?? j}>
+                                                        {formatDate(detail.courseTimeStart)} - {formatDate(detail.courseTimeEnd)}
+                                                    </li>
+                                                ))}
+                                            </ol>
+                                        </td>
+                                        <td className='course-register' data-label='Đăng ký'>
+                                            <Link to='/dang-nhap' className='btnRegister btn btn-primary gh-course-register-btn'>
+                                                Đăng ký
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr className='gh-course-state-row'>
+                                    <td colSpan={6}>
+                                        <div className='gh-course-state gh-course-state--empty' role='status'>
+                                            <h3 className='gh-course-state-title'>Hiện chưa có lịch khai giảng</h3>
+                                            <p className='gh-course-state-text'>
+                                                Chưa có khóa học sắp khai giảng trong tháng {month}/{year}. Vui lòng chọn tháng khác hoặc quay lại trang chủ.
+                                            </p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </form>
+            </div>
+        </section>
     )
 }
 
 export default CourseTable
+

@@ -1,23 +1,207 @@
 .create-news-container {
+    width: min(100%, 960px);
+    margin: 0 auto;
+    padding: 4px 0 32px;
+    color: #0f172a;
 
-    .create-news-title {
-        h1 {
-            text-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+    .create-news-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        min-height: 36px;
+        margin-bottom: 18px;
+        color: #1e62b6;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+
+        &:hover {
+            color: #174f94;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        &:focus-visible {
+            border-radius: 4px;
+            outline: 3px solid rgba(30, 98, 182, 0.22);
+            outline-offset: 3px;
         }
     }
 
-    .create-news-form {
-        margin-top: 70px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
+    .create-news-title {
+        margin-bottom: 24px;
 
-        form {
-            display: grid;
-            gap: 26px;
-            width: 60%;
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1.3;
         }
 
+        p {
+            margin: 7px 0 0;
+            color: #64748b;
+            font-size: 0.925rem;
+        }
+    }
+
+    .create-news-card {
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .create-news-card-heading {
+        padding: 20px 24px;
+        border-bottom: 1px solid #e2e8f0;
+
+        h2 {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 650;
+        }
+
+        p {
+            margin: 5px 0 0;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+    }
+
+    .create-news-error {
+        margin: 18px 24px 0;
+        padding: 10px 12px;
+        border: 1px solid #fecaca;
+        border-radius: 5px;
+        background: #fef2f2;
+        color: #b91c1c;
+    }
+
+    form {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px 24px;
+        padding: 24px;
+        width: 100%;
+    }
+
+    .create-news-field {
+        display: grid;
+        min-width: 0;
+        gap: 8px;
+
+        label {
+            color: #334155;
+            font-size: 0.9rem;
+            font-weight: 600;
+
+            span {
+                color: #b91c1c;
+            }
+        }
+    }
+
+    .form-control {
+        width: 100%;
+        min-height: 44px;
+        border-color: #cbd5e1;
+        border-radius: 5px;
+
+        &:focus {
+            border-color: #1e62b6;
+            box-shadow: 0 0 0 3px rgba(30, 98, 182, 0.14);
+        }
+    }
+
+    .create-news-textarea {
+        min-height: 180px;
+        resize: vertical;
+    }
+
+    .create-news-field--content,
+    .create-news-actions {
+        grid-column: 1 / -1;
+    }
+
+    .create-news-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding-top: 4px;
+    }
+
+    .create-news-cancel-button,
+    .create-news-submit-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 0 16px;
+        border: 1px solid transparent;
+        border-radius: 5px;
+        font: inherit;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+
+        &:focus-visible {
+            outline: 3px solid rgba(30, 98, 182, 0.25);
+            outline-offset: 2px;
+        }
+    }
+
+    .create-news-cancel-button {
+        border-color: #cbd5e1;
+        background: #fff;
+        color: #334155;
+
+        &:hover {
+            background: #f8fafc;
+            color: #334155;
+        }
+    }
+
+    .create-news-submit-button {
+        border-color: #1e62b6;
+        background: #1e62b6;
+        color: #fff;
+
+        &:hover {
+            border-color: #174f94;
+            background: #174f94;
+        }
+    }
+}
+
+@media (max-width: 767px) {
+    .create-news-container {
+        padding: 4px 0 28px;
+
+        .create-news-back-link {
+            margin-bottom: 14px;
+        }
+
+        .create-news-title {
+            margin-bottom: 20px;
+        }
+
+        .create-news-card-heading,
+        form {
+            padding-right: 16px;
+            padding-left: 16px;
+        }
+
+        form {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 18px;
+        }
+
+        .create-news-field--content,
+        .create-news-actions {
+            grid-column: auto;
+        }
     }
 }

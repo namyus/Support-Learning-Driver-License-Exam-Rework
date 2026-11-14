@@ -5,12 +5,11 @@ import "./index.scss";
 
 const RegistrationPage: React.FC = () => {
   return (
-    <>
-      <div className="registration">
-        <RegistrationForm />
-      </div>
-    </>
+    <main className="registration">
+      <RegistrationForm />
+    </main>
   );
 };
 
 export default RegistrationPage;
+

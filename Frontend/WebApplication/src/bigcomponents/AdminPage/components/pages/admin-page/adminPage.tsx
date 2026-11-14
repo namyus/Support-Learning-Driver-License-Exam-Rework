@@ -9,19 +9,19 @@ function AdminPage() {
   const [openSidebarToggle, setOpenSidebarToggle] = useState(false);
 
   const OpenSidebar = () => {
-    setOpenSidebarToggle(!openSidebarToggle);
+    setOpenSidebarToggle((prev) => !prev);
   };
 
   return (
-    <div className="AdminPage-contain">
+    <div className="AdminPage-contain admin-layout">
       <div className="grid-container">
         <Header OpenSidebar={OpenSidebar} />
-        <Sidebar 
+        <Sidebar
           openSidebarToggle={openSidebarToggle}
           OpenSidebar={OpenSidebar}
         />
         <div className="content-container">
-          <Outlet/>
+          <Outlet />
         </div>
       </div>
     </div>
@@ -29,3 +29,4 @@ function AdminPage() {
 }
 
 export default AdminPage;
+

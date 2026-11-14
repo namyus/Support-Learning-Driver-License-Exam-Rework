@@ -143,3 +143,424 @@
         font-size: 18px;
     }
 }
+
+/* ==========================================================================
+   Scoped Guest Home Page — Step 3: Upcoming Courses Dossier Cards & States
+   ========================================================================== */
+
+@keyframes ghCourseSpin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.guest-home-page {
+    .course-container.gh-course-section {
+        max-width: var(--gh-container-max, 1200px);
+        margin: 72px auto 0;
+        padding: 0 24px;
+        height: auto;
+
+        .gh-section-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .gh-section-title {
+            position: relative;
+            margin: 0;
+            padding-bottom: 14px;
+            font-size: clamp(1.5rem, 2.4vw, 2rem);
+            font-weight: 700;
+            line-height: 1.3;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            color: var(--gh-text-primary, #0F172A);
+            text-shadow: none;
+
+            &::after {
+                content: '';
+                position: absolute;
+                left: 50%;
+                bottom: 0;
+                transform: translateX(-50%);
+                width: 48px;
+                height: 4px;
+                border-radius: 999px;
+                background-color: var(--gh-brand-primary, #1E62B6);
+            }
+        }
+
+        .course-list.gh-course-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 28px;
+            align-items: stretch;
+            justify-content: stretch;
+            margin: 0;
+            padding: 0;
+            height: auto;
+        }
+
+        .course-section-1.gh-course-card {
+            position: relative;
+            height: 100%;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background-color: var(--gh-bg-surface, #FFFFFF);
+            border: 1px solid var(--gh-border-subtle, #E2E8F0);
+            border-radius: var(--gh-radius-md, 12px);
+            box-shadow: var(--gh-shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.08));
+            overflow: hidden;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+            &:hover {
+                border-color: var(--gh-border-strong, #CBD5E1);
+                box-shadow: var(--gh-shadow-md, 0 10px 25px -5px rgba(15, 23, 42, 0.08));
+            }
+
+            .upperbox.gh-course-card__header {
+                position: static;
+                width: 100%;
+                height: auto;
+                min-height: 72px;
+                padding: 20px 24px;
+                background-color: var(--gh-brand-primary, #1E62B6);
+                border-bottom: 3px solid var(--gh-brand-sky, #4292EB);
+                border-radius: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .gh-course-card__title {
+                margin: 0;
+                color: #FFFFFF;
+                font-size: 1.25rem;
+                font-weight: 700;
+                line-height: 1.35;
+                letter-spacing: 0.01em;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .course-content.gh-course-card__body {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                padding: 24px 24px 20px;
+                background-color: #FFFFFF;
+
+                .course-content-list.gh-course-card__list {
+                    margin: 0;
+                    padding: 0;
+                    height: auto;
+                    list-style: none;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                    justify-content: flex-start;
+
+                    li {
+                        list-style: none;
+                        margin: 0;
+                        padding: 10px 14px;
+                        text-align: left;
+                        font-size: 0.96875rem;
+                        line-height: 1.5;
+                        font-weight: 500;
+                        color: var(--gh-text-secondary, #334155);
+                        background-color: #F8FAFC;
+                        border: 1px solid #F1F5F9;
+                        border-radius: 8px;
+                        font-variant-numeric: tabular-nums;
+                        overflow-wrap: break-word;
+
+                        &:first-child {
+                            background-color: var(--gh-brand-sky-soft, #EBF4FF);
+                            border-color: rgba(66, 146, 235, 0.28);
+                            color: var(--gh-text-primary, #0F172A);
+                            font-weight: 600;
+                        }
+                    }
+                }
+            }
+
+            .underbox.gh-course-card__footer {
+                position: static;
+                width: 100%;
+                height: auto;
+                padding: 4px 24px 24px;
+                background-color: #FFFFFF;
+                border-top: none;
+                border-radius: 0;
+
+                .gh-course-card__cta {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    min-height: 46px;
+                    padding: 10px 20px;
+                    border-radius: var(--gh-radius-sm, 8px);
+                    background-color: var(--gh-brand-primary, #1E62B6);
+                    border: 1.5px solid var(--gh-brand-primary, #1E62B6);
+                    color: #FFFFFF;
+                    font-size: 0.96875rem;
+                    font-weight: 600;
+                    line-height: 1.25;
+                    letter-spacing: 0.01em;
+                    text-transform: none;
+                    text-decoration: none;
+                    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+                    transition:
+                        background-color 0.18s ease,
+                        border-color 0.18s ease,
+                        box-shadow 0.18s ease;
+
+                    &:hover {
+                        background-color: var(--gh-brand-primary-hover, #164C8F);
+                        border-color: var(--gh-brand-primary-hover, #164C8F);
+                        color: #FFFFFF;
+                        box-shadow: 0 4px 10px rgba(30, 98, 182, 0.22);
+                    }
+
+                    &:active {
+                        background-color: #123E75;
+                        border-color: #123E75;
+                        color: #FFFFFF;
+                    }
+
+                    &:focus-visible {
+                        outline: 2px solid var(--gh-brand-primary, #1E62B6);
+                        outline-offset: 2px;
+                        box-shadow: var(--gh-focus-ring, 0 0 0 3px rgba(66, 146, 235, 0.45));
+                    }
+                }
+            }
+        }
+
+        .gh-course-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            min-height: 220px;
+            padding: 40px 24px;
+            background-color: var(--gh-bg-surface, #FFFFFF);
+            border: 1px solid var(--gh-border-subtle, #E2E8F0);
+            border-radius: var(--gh-radius-md, 12px);
+            box-shadow: var(--gh-shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.08));
+            gap: 16px;
+
+            .gh-course-state__spinner {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                border: 3px solid var(--gh-border-subtle, #E2E8F0);
+                border-top-color: var(--gh-brand-primary, #1E62B6);
+                animation: ghCourseSpin 0.8s linear infinite;
+            }
+
+            .gh-course-state__text {
+                margin: 0;
+                max-width: 480px;
+                font-size: 1.0625rem;
+                font-weight: 500;
+                line-height: 1.6;
+                color: var(--gh-text-secondary, #334155);
+            }
+
+            &.gh-course-state--error {
+                background-color: var(--gh-danger-bg, #FEF2F2);
+                border-color: #FECACA;
+
+                .gh-course-state__text {
+                    color: #991B1B;
+                }
+            }
+
+            .gh-course-state__retry {
+                appearance: none;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 42px;
+                padding: 8px 24px;
+                border-radius: var(--gh-radius-sm, 8px);
+                background-color: var(--gh-brand-primary, #1E62B6);
+                border: 1.5px solid var(--gh-brand-primary, #1E62B6);
+                color: #FFFFFF;
+                font-family: inherit;
+                font-size: 0.9375rem;
+                font-weight: 600;
+                line-height: 1.25;
+                cursor: pointer;
+                transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+
+                &:hover {
+                    background-color: var(--gh-brand-primary-hover, #164C8F);
+                    border-color: var(--gh-brand-primary-hover, #164C8F);
+                }
+
+                &:focus-visible {
+                    outline: 2px solid var(--gh-brand-primary, #1E62B6);
+                    outline-offset: 2px;
+                    box-shadow: var(--gh-focus-ring, 0 0 0 3px rgba(66, 146, 235, 0.45));
+                }
+            }
+        }
+
+        .gh-course-pagination {
+            margin-top: 32px;
+            display: flex;
+            justify-content: center;
+
+            .pagination {
+                margin: 0;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 8px;
+                list-style: none;
+
+                .page-item {
+                    list-style: none;
+
+                    .page-link {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        min-width: 40px;
+                        height: 40px;
+                        padding: 0 14px;
+                        border-radius: var(--gh-radius-sm, 8px);
+                        border: 1px solid var(--gh-border-subtle, #E2E8F0);
+                        background-color: var(--gh-bg-surface, #FFFFFF);
+                        color: var(--gh-text-primary, #0F172A);
+                        font-size: 0.9375rem;
+                        font-weight: 600;
+                        font-variant-numeric: tabular-nums;
+                        cursor: pointer;
+                        box-shadow: none;
+                        transition:
+                            background-color 0.15s ease,
+                            border-color 0.15s ease,
+                            color 0.15s ease;
+
+                        &:hover:not(:disabled) {
+                            background-color: var(--gh-brand-sky-soft, #EBF4FF);
+                            border-color: var(--gh-brand-sky, #4292EB);
+                            color: var(--gh-brand-primary, #1E62B6);
+                        }
+
+                        &:focus-visible {
+                            outline: 2px solid var(--gh-brand-primary, #1E62B6);
+                            outline-offset: 2px;
+                            box-shadow: var(--gh-focus-ring, 0 0 0 3px rgba(66, 146, 235, 0.45));
+                        }
+
+                        &:disabled {
+                            opacity: 0.48;
+                            cursor: not-allowed;
+                            background-color: #F1F5F9;
+                            color: var(--gh-text-muted, #64748B);
+                        }
+                    }
+
+                    &.active .page-link {
+                        background-color: var(--gh-brand-primary, #1E62B6);
+                        border-color: var(--gh-brand-primary, #1E62B6);
+                        color: #FFFFFF;
+                    }
+                }
+            }
+        }
+    }
+
+    @media screen and (max-width: 991.98px) {
+        .course-container.gh-course-section {
+            margin-top: 56px;
+
+            .gh-section-header {
+                margin-bottom: 28px;
+            }
+
+            .course-list.gh-course-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 24px;
+            }
+        }
+    }
+
+    @media screen and (max-width: 767.98px) {
+        .course-container.gh-course-section {
+            margin-top: 44px;
+            padding: 0 16px;
+
+            .gh-section-header {
+                margin-bottom: 24px;
+            }
+
+            .course-list.gh-course-grid {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 20px;
+            }
+
+            .course-section-1.gh-course-card {
+                .upperbox.gh-course-card__header {
+                    padding: 18px 20px;
+                    min-height: 64px;
+                }
+
+                .gh-course-card__title {
+                    font-size: 1.125rem;
+                }
+
+                .course-content.gh-course-card__body {
+                    padding: 20px 18px 16px;
+
+                    .course-content-list.gh-course-card__list {
+                        gap: 10px;
+
+                        li {
+                            padding: 9px 12px;
+                            font-size: 0.9375rem;
+                        }
+                    }
+                }
+
+                .underbox.gh-course-card__footer {
+                    padding: 4px 18px 20px;
+                }
+            }
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .course-container.gh-course-section {
+            .course-section-1.gh-course-card,
+            .course-section-1.gh-course-card .underbox.gh-course-card__footer .gh-course-card__cta,
+            .gh-course-state .gh-course-state__retry,
+            .gh-course-pagination .pagination .page-item .page-link {
+                transition: none;
+            }
+
+            .gh-course-state .gh-course-state__spinner {
+                animation: none;
+            }
+        }
+    }
+}

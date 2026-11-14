@@ -1,54 +1,63 @@
 import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCircleInfo } from "@fortawesome/free-solid-svg-icons";
+import logo from "../../../../AuthorizationPage/assets/images/logo.png";
 import "./index.scss";
-import { useNavigate } from "react-router-dom";
 
 const ForgetPassword: React.FC = () => {
-
   const navigate = useNavigate();
 
-  // const handleResetPassword = async () => {
-  //   if (!email) {
-  //     toast.error("Please enter your email.");
-  //     return;
-  //   }
-
-  //   try {
-  //     // Sử dụng axios để tải dữ liệu từ tệp JSON
-  //     const response = await axios.get("data.json");
-  //     const data = response.data;
-
-  //     // Kiểm tra nếu data không phải là mảng hoặc mảng rỗng
-  //     if (!Array.isArray(data.users) || data.users.length === 0) {
-  //       toast.error("No user data found.");
-  //       return;
-  //     }
-
-  //     const user = data.users.find(
-  //       (user: { gmail: string }) => user.gmail === email
-  //     );
-
-  //     if (user) {
-  //       // Tạo mã xác nhận ngẫu nhiên
-  //       const confirmationCode = Math.random().toString(36).substring(2, 8);
-
-  //       // Gửi mã xác nhận đến email - Đoạn này bạn cần cài đặt gửi email
-  //       // Ví dụ: sendEmail(email, confirmationCode);
-
-  //       toast.success("Confirmation code sent to your email.");
-  //     } else {
-  //       toast.error("Email not found. Please try again or register.");
-  //     }
-  //   } catch (error) {
-  //     toast.error("Failed to send confirmation code. Please try again.");
-  //   }
-  // };
-
   return (
-    <div className="forget-password">
-      <h1 className="forget-password__title">Chức năng chưa được phát triển</h1>
-      <button className="btn btn-primary" onClick={() => navigate('/dang-nhap')}>Quay về</button>
-    </div>
+    <section className="forget-password" aria-labelledby="forget-password-heading">
+      <div className="forget-header">
+        <img
+          src={logo}
+          alt="Trung tâm đào tạo lái xe FDriving"
+          className="forget-logo"
+        />
+        <h1 id="forget-password-heading" className="forget-password__title">
+          Quên mật khẩu?
+        </h1>
+        <p className="forget-password__subtitle">
+          Chức năng khôi phục mật khẩu hiện chưa được hỗ trợ. Vui lòng liên hệ trung tâm để được hỗ trợ.
+        </p>
+      </div>
+
+      <div className="rectangle-border">
+        <div className="forget-status-box" role="status" aria-live="polite">
+          <FontAwesomeIcon
+            icon={faCircleInfo}
+            className="forget-status-icon"
+            aria-hidden="true"
+          />
+          <div className="forget-status-content">
+            <h2 className="forget-status-heading">Chức năng chưa được phát triển</h2>
+            <p className="forget-status-text">
+              Hệ thống hiện chưa cung cấp tính năng tự đặt lại mật khẩu trực tuyến. Học viên cần cấp lại mật khẩu vui lòng liên hệ trực tiếp bộ phận quản lý đào tạo của FDriving.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="forget-buttons">
+        <button
+          type="button"
+          className="forget-submit-btn"
+          onClick={() => navigate("/dang-nhap")}
+        >
+          Quay lại đăng nhập
+        </button>
+      </div>
+
+      <div className="forget-footer-links">
+        <Link to="/" className="forget-back-home-link">
+          ← Quay về trang chủ
+        </Link>
+      </div>
+    </section>
   );
 };
 
 export default ForgetPassword;
+

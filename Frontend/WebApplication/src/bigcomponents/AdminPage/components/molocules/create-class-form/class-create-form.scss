@@ -1,23 +1,412 @@
-.create-class-container {
+// FDriving Admin — Create Theory & Practice Lesson Form Styles (Scoped to .admin-layout)
+.admin-layout {
+    .create-class-container {
+        width: 100%;
+        max-width: 960px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
 
-    .create-class-title {
-        h1 {
-            text-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+        .admin-form-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 20px 24px;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+
+            &__left {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            &__eyebrow {
+                display: inline-flex;
+                align-items: center;
+                width: fit-content;
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: #1e62b6;
+                background-color: #eff6ff;
+                border: 1px solid #bfdbfe;
+                border-radius: 999px;
+                padding: 3px 10px;
+                margin-bottom: 2px;
+            }
+
+            .create-class-title {
+                h1 {
+                    font-size: 22px;
+                    font-weight: 700;
+                    color: #0f172a;
+                    margin: 0;
+                    text-shadow: none;
+                    text-transform: none;
+                    text-align: left;
+                    letter-spacing: -0.015em;
+                }
+            }
+
+            &__subtitle {
+                font-size: 13.5px;
+                color: #64748b;
+                margin: 0;
+                line-height: 1.5;
+            }
+
+            &__actions {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+        }
+
+        .admin-form-back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            height: 40px;
+            padding: 0 15px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #334155;
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+
+            &:hover {
+                background-color: #f8fafc;
+                border-color: #94a3b8;
+                color: #0f172a;
+            }
+        }
+
+        .admin-btn-add-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            height: 40px;
+            padding: 0 15px;
+            font-size: 13.5px;
+            font-weight: 600;
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e62b6;
+            border-radius: 10px;
+
+            &:hover {
+                background-color: #1e62b6;
+                border-color: #1e62b6;
+                color: #ffffff;
+            }
+        }
+
+        .create-class-form {
+            margin-top: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 26px 28px;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+            gap: 20px;
+
+            .admin-schedule-banner {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 12px 16px;
+                background-color: #eff6ff;
+                border: 1px solid #bfdbfe;
+                border-radius: 10px;
+                color: #1e3a8a;
+                font-size: 13.5px;
+
+                svg {
+                    color: #1e62b6;
+                    font-size: 16px;
+                    flex-shrink: 0;
+                }
+            }
+
+            .admin-schedule-periods {
+                background-color: #eff6ff;
+                border: 1px solid #bfdbfe;
+                border-radius: 12px;
+                padding: 14px 18px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+
+                &__title {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-size: 13.5px;
+                    font-weight: 700;
+                    color: #1e3a8a;
+
+                    svg {
+                        color: #1e62b6;
+                        font-size: 15px;
+                    }
+                }
+
+                &__list {
+                    margin: 0;
+                    padding-left: 20px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                    font-size: 13.5px;
+                    color: #1e293b;
+                }
+            }
+
+            .admin-form-alert {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 12px 16px;
+                margin: 0;
+                border-radius: 10px;
+                background-color: #fef2f2;
+                border: 1px solid #fecaca;
+                color: #991b1b;
+                font-size: 13.5px;
+                font-weight: 600;
+
+                svg {
+                    font-size: 16px;
+                    flex-shrink: 0;
+                    color: #dc2626;
+                }
+            }
+
+            form {
+                display: flex;
+                flex-direction: column;
+                gap: 24px;
+                width: 100%;
+            }
+
+            .admin-form-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 16px 20px;
+            }
+
+            .form-group {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                margin: 0;
+
+                &--full {
+                    grid-column: 1 / -1;
+                }
+
+                .col-form-label {
+                    padding: 0;
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #1e293b;
+
+                    .required-mark {
+                        color: #dc2626;
+                    }
+                }
+
+                .form-control {
+                    height: 42px;
+                    padding: 0 14px;
+                    font-size: 14px;
+                    color: #0f172a;
+                    background-color: #f8fafc;
+                    border: 1px solid #cbd5e1;
+                    border-radius: 10px;
+                    transition: border-color 0.18s ease, background-color 0.18s ease,
+                        box-shadow 0.18s ease;
+
+                    &:focus {
+                        background-color: #ffffff;
+                        border-color: #1e62b6;
+                        box-shadow: 0 0 0 3px rgba(30, 98, 182, 0.14);
+                        outline: none;
+                    }
+
+                    &:disabled {
+                        background-color: #f1f5f9;
+                        color: #475569;
+                        cursor: not-allowed;
+                    }
+                }
+            }
+
+            .admin-lesson-blocks {
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .admin-lesson-card {
+                background-color: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 18px 20px;
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+
+                &__header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                }
+
+                &__badge {
+                    display: inline-flex;
+                    align-items: center;
+                    font-size: 12px;
+                    font-weight: 700;
+                    color: #1e62b6;
+                    background-color: #eff6ff;
+                    border: 1px solid #bfdbfe;
+                    border-radius: 999px;
+                    padding: 3px 10px;
+                }
+
+                .form-group .form-control {
+                    background-color: #ffffff;
+                }
+            }
+
+            .admin-form-actions {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 12px;
+                padding-top: 16px;
+                border-top: 1px solid #e2e8f0;
+                flex-wrap: wrap;
+
+                &--between {
+                    justify-content: space-between;
+                }
+
+                &__right {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    flex-wrap: wrap;
+                }
+
+                .admin-btn-cancel {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: 42px;
+                    padding: 0 18px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: #334155;
+                    background-color: #ffffff;
+                    border: 1px solid #cbd5e1;
+                    border-radius: 10px;
+                    text-decoration: none;
+
+                    &:hover {
+                        background-color: #f8fafc;
+                        border-color: #94a3b8;
+                        color: #0f172a;
+                    }
+                }
+
+                .admin-btn-add-row {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    height: 42px;
+                    padding: 0 16px;
+                    font-size: 13.5px;
+                    font-weight: 600;
+                    color: #1e62b6;
+                    background-color: #eff6ff;
+                    border: 1px solid #bfdbfe;
+                    border-radius: 10px;
+
+                    &:hover {
+                        background-color: #dbeafe;
+                        border-color: #93c5fd;
+                        color: #1e3a8a;
+                    }
+                }
+
+                .admin-btn-submit {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: 42px;
+                    padding: 0 22px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: #ffffff;
+                    background-color: #1e62b6;
+                    border: 1px solid #1e62b6;
+                    border-radius: 10px;
+
+                    &:hover {
+                        background-color: #164e96;
+                        border-color: #164e96;
+                    }
+                }
+            }
         }
     }
 
-    .create-class-form {
-        margin-top: 70px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
+    @media (max-width: 768px) {
+        .create-class-container {
+            .admin-form-header {
+                padding: 16px 18px;
+            }
 
-        form {
-            display: grid;
-            gap: 26px;
-            width: 60%;
+            .create-class-form {
+                padding: 18px 16px;
+
+                .admin-form-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .admin-form-actions {
+                    flex-direction: column;
+                    align-items: stretch;
+
+                    &__right {
+                        width: 100%;
+                        flex-direction: column;
+                    }
+
+                    .admin-btn-cancel,
+                    .admin-btn-add-row,
+                    .admin-btn-submit {
+                        width: 100%;
+                    }
+                }
+            }
         }
-
     }
 }

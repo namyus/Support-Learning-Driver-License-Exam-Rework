@@ -1,35 +1,76 @@
-import React, { useState, useEffect } from 'react'
-import './course-update-form.scss'
+import React, { useState, useEffect, useCallback } from 'react';
+import './course-update-form.scss';
 import api from '../../../../../config/axios';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { BsArrowLeft, BsExclamationCircle } from 'react-icons/bs';
+
+interface UpdateCoursePayload {
+    courseId: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    numberOfStudents: number;
+    limitStudent: number;
+    status: boolean;
+}
+
+function getApiErrorMessage(err: unknown, fallback: string): string {
+    if (
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error ===
+            'string'
+    ) {
+        return (err as { response: { data: { error: string } } }).response.data.error;
+    }
+    return fallback;
+}
 
 function UpdateCourseForm() {
     const { courseId } = useParams();
-    const [error, setError] = useState(null);
-    const [inputData, setInputData] = useState({
+    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [inputData, setInputData] = useState<UpdateCoursePayload>({
         courseId: '',
         name: '',
         startDate: '',
         endDate: '',
         numberOfStudents: 0,
         limitStudent: 0,
-        status: true
+        status: true,
     });
 
     const navigate = useNavigate();
 
-    const getCourseById = async () => {
+    const getCourseById = useCallback(async () => {
+        if (!courseId) return;
+        setIsLoading(true);
         try {
             const response = await api.get(`Course/${courseId}`);
-            setInputData(response.data);
-        } catch (err) {
-            if (err.response?.data?.error) {
-                setError(err.response.data.error);
-                return;
+            if (response.data) {
+                setInputData(response.data);
             }
+        } catch (err) {
+            const msg = getApiErrorMessage(err, 'Không thể tải thông tin khoá học.');
+            setError(msg);
+        } finally {
+            setIsLoading(false);
         }
-    }
+    }, [courseId]);
+
+    const formatDateToInputValue = (dateString: string) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        if (Number.isNaN(date.getTime())) {
+            return '';
+        }
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
 
     const updateCourse = async () => {
         try {
@@ -39,113 +80,207 @@ function UpdateCourseForm() {
             } else if (!/^(\d{3})B2$/.test(inputData.name)) {
                 setError('Tên khoá học phải có định dạng XXXB2 với X là số.');
                 return;
+            } else if (
+                formatDateToInputValue(inputData.endDate) &&
+                formatDateToInputValue(inputData.startDate) &&
+                formatDateToInputValue(inputData.endDate) <
+                    formatDateToInputValue(inputData.startDate)
+            ) {
+                setError('Ngày bế giảng phải sau ngày khai giảng.');
+                return;
+            } else if (
+                Number.isNaN(inputData.limitStudent) ||
+                inputData.limitStudent <= 0
+            ) {
+                setError('Số học viên tối đa phải lớn hơn 0.');
+                return;
             }
 
             await api.put('Course/update', inputData);
-            toast.success("Cập nhật khoá học thành công");
+            toast.success('Cập nhật khoá học thành công');
             setError(null);
             navigate('/quan-ly-khoa-hoc');
-
         } catch (err) {
-            if (err.response?.data?.error) {
-                setError(err.response.data.error);
-                return;
-            }
+            const msg = getApiErrorMessage(err, 'Cập nhật khoá học thất bại.');
+            setError(msg);
+            return;
         }
-        window.scroll( {
+        window.scroll({
             top: 0,
-            behavior: 'instant'
+            behavior: 'instant',
         });
-    }
-
-    const formatDateToInputValue = (dateString) => {
-        const date = new Date(dateString);
-
-        // Check if the date is valid
-        if (isNaN(date.getTime())) {
-            return ''; // Handle invalid dates by returning an empty string
-        }
-
-        const year = date.getFullYear();
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const day = date.getDate().toString().padStart(2, '0');
-
-        return `${year}-${month}-${day}`;
-    }
+    };
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        updateCourse();
-    }
+        void updateCourse();
+    };
 
     useEffect(() => {
-        getCourseById();
-    }, [])
+        void getCourseById();
+    }, [getCourseById]);
 
     return (
         <div className='update-course-container'>
-            <div className='update-course-title'>
-                <h1 className='text-center text-uppercase'>Cập nhật khoá học</h1>
+            <div className='admin-form-header'>
+                <div className='admin-form-header__left'>
+                    <span className='admin-form-header__eyebrow'>Quản lý đào tạo</span>
+                    <div className='update-course-title'>
+                        <h1>Cập nhật khoá học</h1>
+                    </div>
+                    <p className='admin-form-header__subtitle'>
+                        Chỉnh sửa thông tin, thời gian đào tạo và chỉ tiêu học viên cho khoá học{' '}
+                        <strong>{inputData.courseId || courseId}</strong>.
+                    </p>
+                </div>
+                <div className='admin-form-header__actions'>
+                    <Link to='/quan-ly-khoa-hoc' className='admin-form-back-btn'>
+                        <BsArrowLeft aria-hidden='true' />
+                        <span>Quay lại danh sách</span>
+                    </Link>
+                </div>
             </div>
-            {
-                inputData != null ? (
-                    <div className='update-course-form'>
-                        {error && <h5 className="error-message mb-3 text-danger">{error}</h5>}
+
+            {inputData != null ? (
+                <div className='update-course-form'>
+                    {error && (
+                        <div className='error-message admin-form-alert' role='alert'>
+                            <BsExclamationCircle aria-hidden='true' />
+                            <span>{error}</span>
+                        </div>
+                    )}
+
+                    {isLoading ? (
+                        <div className='admin-form-loading' role='status'>
+                            <p>Đang tải thông tin khoá học...</p>
+                        </div>
+                    ) : (
                         <form onSubmit={handleSubmit}>
-                            <div className='form-group row'>
-                                <label htmlFor="courseId" className="col-sm-3 col-form-label">Mã khoá học: </label>
-                                <div className="col-sm-9">
-                                    <input type="text" className="form-control" id="courseId" placeholder="courseId"
+                            <div className='admin-form-grid'>
+                                <div className='form-group'>
+                                    <label htmlFor='courseId' className='col-form-label'>
+                                        Mã khoá học
+                                    </label>
+                                    <input
+                                        type='text'
+                                        className='form-control'
+                                        id='courseId'
+                                        placeholder='Ví dụ: 1024B2'
                                         name='courseId'
                                         value={inputData.courseId}
-                                        onChange={e => setInputData({ ...inputData, courseId: e.target.value })} />
+                                        onChange={(e) =>
+                                            setInputData({
+                                                ...inputData,
+                                                courseId: e.target.value,
+                                            })
+                                        }
+                                    />
                                 </div>
-                            </div>
-                            <div className='form-group row'>
-                                <label htmlFor="name" className="col-sm-3 col-form-label">Tên khoá học: </label>
-                                <div className="col-sm-9">
-                                    <input type="text" className="form-control" id="name" placeholder="name"
+
+                                <div className='form-group'>
+                                    <label htmlFor='name' className='col-form-label'>
+                                        Tên khoá học
+                                    </label>
+                                    <input
+                                        type='text'
+                                        className='form-control'
+                                        id='name'
+                                        placeholder='Ví dụ: 241B2'
                                         name='name'
                                         value={inputData.name}
-                                        onChange={e => setInputData({ ...inputData, name: e.target.value })} />
+                                        onChange={(e) =>
+                                            setInputData({ ...inputData, name: e.target.value })
+                                        }
+                                    />
                                 </div>
-                            </div>
-                            <div className='form-group row'>
-                                <label htmlFor="startDate" className="col-sm-3 col-form-label">Ngày khai giảng: </label>
-                                <div className="col-sm-9">
-                                    <input type="date" className="form-control" id="startDate" placeholder="start date"
+
+                                <div className='form-group'>
+                                    <label htmlFor='startDate' className='col-form-label'>
+                                        Ngày khai giảng
+                                    </label>
+                                    <input
+                                        type='date'
+                                        className='form-control'
+                                        id='startDate'
                                         name='startDate'
                                         value={formatDateToInputValue(inputData.startDate)}
-                                        onChange={e => setInputData({ ...inputData, startDate: e.target.value })} />
+                                        onChange={(e) =>
+                                            setInputData({
+                                                ...inputData,
+                                                startDate: e.target.value,
+                                            })
+                                        }
+                                    />
                                 </div>
-                            </div>
-                            <div className='form-group row'>
-                                <label htmlFor="endDate" className="col-sm-3 col-form-label">Ngày bế giảng: </label>
-                                <div className="col-sm-9">
-                                    <input type="date" className="form-control" id="endDate" placeholder="end date"
+
+                                <div className='form-group'>
+                                    <label htmlFor='endDate' className='col-form-label'>
+                                        Ngày bế giảng
+                                    </label>
+                                    <input
+                                        type='date'
+                                        className='form-control'
+                                        id='endDate'
                                         name='endDate'
                                         value={formatDateToInputValue(inputData.endDate)}
-                                        onChange={e => setInputData({ ...inputData, endDate: e.target.value })} />
+                                        onChange={(e) =>
+                                            setInputData({
+                                                ...inputData,
+                                                endDate: e.target.value,
+                                            })
+                                        }
+                                    />
                                 </div>
-                            </div>
-                            <div className='form-group row'>
-                                <label htmlFor="limitStudent" className="col-sm-3 col-form-label">Số học viên tối đa: </label>
-                                <div className="col-sm-9">
-                                    <input type="text" className="form-control" id="limitStudent" placeholder="limit student"
+
+                                <div className='form-group form-group--full'>
+                                    <label htmlFor='limitStudent' className='col-form-label'>
+                                        Số học viên tối đa
+                                    </label>
+                                    <input
+                                        type='number'
+                                        className='form-control'
+                                        id='limitStudent'
+                                        placeholder='Số học viên tối đa'
                                         name='limitStudent'
-                                        value={inputData.limitStudent}
-                                        onChange={e => setInputData({ ...inputData, limitStudent: parseInt(e.target.value) })} />
+                                        value={
+                                            Number.isNaN(inputData.limitStudent)
+                                                ? ''
+                                                : inputData.limitStudent
+                                        }
+                                        onChange={(e) =>
+                                            setInputData({
+                                                ...inputData,
+                                                limitStudent:
+                                                    e.target.value === ''
+                                                        ? 0
+                                                        : parseInt(e.target.value, 10),
+                                            })
+                                        }
+                                    />
                                 </div>
                             </div>
-                            <button className='btn btn-primary w-25 justify-self-center' type='submit'>Tạo</button>
+
+                            <div className='admin-form-actions'>
+                                <Link to='/quan-ly-khoa-hoc' className='btn admin-btn-cancel'>
+                                    Huỷ bỏ
+                                </Link>
+                                <button
+                                    className='btn btn-primary admin-btn-submit'
+                                    type='submit'
+                                >
+                                    Lưu cập nhật
+                                </button>
+                            </div>
                         </form>
-                    </div>
-                ) : (
-                    <h1>no</h1>
-                )
-            }
+                    )}
+                </div>
+            ) : (
+                <div className='update-course-form'>
+                    <p>Không tìm thấy thông tin khoá học.</p>
+                </div>
+            )}
         </div>
-    )
+    );
 }
 
-export default UpdateCourseForm
+export default UpdateCourseForm;

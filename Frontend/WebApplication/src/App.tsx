@@ -1,5 +1,5 @@
 import './App.scss'
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { Bounce, ToastContainer } from 'react-toastify'
 import 'react-toastify/ReactToastify.css'
 import './general.scss'
@@ -19,6 +19,7 @@ import ReportPage from './bigcomponents/StaffPage/components/pages/report/report
 import UpdateNewsPage from './bigcomponents/StaffPage/components/pages/update-news/update-news'
 
 // Guest import 
+import GuestLayout from './bigcomponents/GuestPage/layout'
 import GuestHomePage from './bigcomponents/GuestPage/components/pages/guest-home/guest-home'
 import GuestCoursePage from './bigcomponents/GuestPage/components/pages/guest-course/guest-course'
 
@@ -91,7 +92,6 @@ import InvoiceManagementPage from './bigcomponents/AdminPage/components/pages/in
 
 function App() {
   const user = sessionStorage.getItem('loginedUser') ? JSON.parse(sessionStorage.getItem('loginedUser')) : null;
-  const member = sessionStorage.getItem('loginedMember') ? JSON.parse(sessionStorage.getItem('loginedMember')) : null;
 
   return (
     <>
@@ -116,19 +116,21 @@ function App() {
             {
               user === null ? (
                 <>
-                  <Route index element={<GuestHomePage />} />
+                  <Route element={<GuestLayout />}>
+                    <Route index element={<GuestHomePage />} />
+                    <Route path='khoahoc/:month/:year' element={<GuestCoursePage />} />
+                  </Route>
                   <Route path='dang-nhap' element={<LoginPage />} />
                   <Route path='dang-ky' element={<RegistrationPage />} />
                   <Route path='quen-mat-khau' element={<ForgetPasswordPage />} />
-                  <Route path='khoahoc/:month/:year' element={<GuestCoursePage />} />
                 </>
               ) : (
                 <>
                   <Route path='/dang-nhap' element={<LoginPage />} />
                   {user.roleId === 1 && (
                     <>
-                      <Route index element={<AdminPage />} />
                       <Route path='/' element={<AdminPage />}>
+                        <Route index element={<Navigate to='/bang-dieu-khien' replace />} />
                         <Route path='bang-dieu-khien' element={<Home />} />
                         <Route path='Thong-tin-ca-nhan' element={<AdminProfile />} />
                         <Route path='quan-ly-khoa-hoc'>
@@ -143,12 +145,14 @@ function App() {
                           <Route index element={<StaffManagementAdminPage />} />
                           <Route path='tao-nhan-vien' element={<CreateStaffAdminPage />} />
                           <Route path='cap-nhat-nhan-vien' element={<UpdateStaffAdminPage />} />
+                          <Route path='cap-nhat-nhan-vien/:staffId' element={<UpdateStaffAdminPage />} />
                         </Route>
                         <Route path='quan-ly-thanh-vien' element={<MemberManagementAdminPage />} />
                         <Route path='quan-ly-giao-vien'>
                           <Route index element={<MentorMamagementAdminPage />} />
                           <Route path='tao-giao-vien' element={<CreateMentorAdminPage />} />
                           <Route path='cap-nhat-giao-vien' element={<UpdateMentorAdminPage />} />
+                          <Route path='cap-nhat-giao-vien/:mentorId' element={<UpdateMentorAdminPage />} />
                         </Route>
                         <Route path='quan-ly-lich-hoc'>
                           <Route index element={<ClassMamagementAdminPage />} />
