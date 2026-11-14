@@ -57,3 +57,10 @@ Thumbs.db
 
 # Environment variables
 .env
+
+# Local AI Agent configuration - do not push to GitHub
+/AGENTS.md
+/.agents/
+
+# Local test accounts - never commit credentials
+Frontend/Account-tesing.txt
