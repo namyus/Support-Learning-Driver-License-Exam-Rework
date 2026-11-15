@@ -38,9 +38,13 @@ import TheoryTestPage from './bigcomponents/MemberPage/components/pages/theory-t
 import PracticeSpecificPage from './bigcomponents/MemberPage/components/pages/practice-specific-page/practice-specific'
 
 // Authorization page
-import LoginPage from './bigcomponents/AuthorizationPage/components/pages/LoginPage/LoginPage'
-import RegistrationPage from './bigcomponents/AuthorizationPage/components/pages/RegistrationPage/RegistrationPage'
-import ForgetPasswordPage from './bigcomponents/AuthorizationPage/components/pages/ForgetpasswordPage/ForgetPasswordPage'
+import { useAppSelector } from './app/store'
+import {
+  ForgetPasswordPage,
+  LoginPage,
+  RegistrationPage,
+  selectCurrentUser,
+} from './features/auth'
 
 // Mentor page
 import MentorHomePage from './bigcomponents/MentorPage/components/pages/mentor-home-page/mentor-home-page'
@@ -91,7 +95,7 @@ import CreateTheoryLesson, { CreatePracticeLesson } from './bigcomponents/AdminP
 import InvoiceManagementPage from './bigcomponents/AdminPage/components/pages/invoice-management/invoice-management'
 
 function App() {
-  const user = sessionStorage.getItem('loginedUser') ? JSON.parse(sessionStorage.getItem('loginedUser')) : null;
+  const user = useAppSelector(selectCurrentUser);
 
   return (
     <>
