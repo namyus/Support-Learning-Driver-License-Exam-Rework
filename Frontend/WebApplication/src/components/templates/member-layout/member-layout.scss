@@ -1,0 +1,273 @@
+.member-layout {
+  /* FDriving Scoped Design Tokens (HomeGuest primary + Admin consistency) */
+  --mh-brand-primary: #1E62B6;
+  --mh-brand-primary-hover: #164C8F;
+  --mh-brand-sky: #4292EB;
+  --mh-brand-sky-soft: #EBF4FF;
+
+  --mh-bg-page: #F8FAFC;
+  --mh-bg-surface: #FFFFFF;
+  --mh-text-primary: #0F172A;
+  --mh-text-secondary: #334155;
+  --mh-text-muted: #64748B;
+  --mh-border-subtle: #E2E8F0;
+  --mh-border-strong: #CBD5E1;
+
+  --mh-danger: #DC2626;
+  --mh-danger-bg: #FEF2F2;
+  --mh-focus-ring: 0 0 0 3px rgba(66, 146, 235, 0.45);
+
+  --mh-space-1: 4px;
+  --mh-space-2: 8px;
+  --mh-space-3: 12px;
+  --mh-space-4: 16px;
+  --mh-space-5: 24px;
+  --mh-space-6: 32px;
+
+  --mh-radius-sm: 8px;
+  --mh-radius-md: 12px;
+  --mh-radius-lg: 16px;
+  --mh-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --mh-shadow-md: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 4px 10px -3px rgba(15, 23, 42, 0.06);
+
+  --mh-container-max: 1200px;
+  --mh-header-height: 80px;
+
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: clip;
+  background-color: var(--mh-bg-page);
+  color: var(--mh-text-primary);
+  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  > header {
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    min-height: var(--mh-header-height);
+    background-color: var(--mh-brand-primary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: var(--mh-shadow-sm);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    z-index: 100;
+    transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  > .body-container {
+    flex: 1 0 auto;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    min-height: 500px;
+    overflow-x: clip;
+
+    header {
+      position: static;
+      top: auto;
+      width: auto;
+      height: auto;
+      background-color: transparent;
+      z-index: auto;
+    }
+  }
+
+  > footer {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    margin-top: 80px;
+    background-color: var(--mh-brand-primary);
+    border-top: 4px solid var(--mh-brand-sky);
+    color: #FFFFFF;
+
+    &.home-footer {
+      margin-top: 80px;
+    }
+
+    &.course-verification-footer {
+      margin-top: 80px;
+    }
+
+    &.exam-document-footer,
+    &.exam-document-update-footer {
+      margin-top: 80px;
+    }
+  }
+
+  .footer-container.gh-footer-container {
+    max-width: var(--mh-container-max, 1200px);
+    width: 100%;
+    height: auto;
+    margin: 0 auto;
+    padding: 48px 24px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+    grid-template-rows: auto;
+    gap: 48px;
+    align-items: start;
+
+    .footer-information.gh-footer-info {
+      grid-column: 1;
+      justify-self: stretch;
+      width: 100%;
+      color: #FFFFFF;
+      text-align: left;
+
+      h1.gh-footer-title {
+        padding-top: 0;
+        margin: 0 0 18px;
+        width: 100%;
+        text-align: left;
+        font-size: 1.375rem;
+        font-weight: 700;
+        line-height: 1.35;
+        letter-spacing: 0.01em;
+        color: #FFFFFF;
+      }
+
+      .contact-information.gh-footer-contact {
+        margin: 0;
+        padding: 0;
+      }
+
+      ul {
+        margin: 0;
+        padding: 0;
+        max-width: none;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      li {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        text-align: left;
+        font-size: 0.96875rem;
+        line-height: 1.6;
+        color: rgba(255, 255, 255, 0.92);
+        font-variant-numeric: tabular-nums;
+        overflow-wrap: break-word;
+
+        &:first-child {
+          display: inline-block;
+          margin-bottom: 2px;
+          font-size: 0.875rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          color: #BAE6FD;
+        }
+      }
+    }
+
+    .divine-line.gh-footer-divider {
+      grid-column: 2;
+      margin: 0;
+      align-self: stretch;
+      width: 1px;
+      height: auto;
+      min-height: 100%;
+      background-color: rgba(255, 255, 255, 0.22);
+    }
+
+    .commiting-information.gh-footer-legal {
+      grid-column: 3;
+      padding-top: 0;
+      max-width: none;
+      width: 100%;
+      align-self: start;
+      justify-self: stretch;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+
+      p {
+        max-width: 540px;
+        margin: 0;
+        font-size: 0.96875rem;
+        line-height: 1.65;
+        color: rgba(255, 255, 255, 0.94);
+        text-align: left;
+        font-variant-numeric: tabular-nums;
+        overflow-wrap: break-word;
+      }
+
+      .line-2 {
+        margin-top: 10px;
+      }
+
+      img.gh-footer-badge {
+        width: auto;
+        max-width: min(260px, 100%);
+        height: auto;
+        margin: 20px 0 0;
+        padding: 6px;
+        background-color: #FFFFFF;
+        border-radius: var(--mh-radius-sm, 8px);
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+        display: block;
+      }
+    }
+  }
+
+  @media screen and (max-width: 991.98px) {
+    > footer {
+      margin-top: 64px;
+    }
+
+    .footer-container.gh-footer-container {
+      padding: 40px 24px;
+      gap: 32px;
+    }
+  }
+
+  @media screen and (max-width: 767.98px) {
+    --mh-header-height: 72px;
+
+    > footer {
+      margin-top: 48px;
+    }
+
+    .footer-container.gh-footer-container {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 24px;
+      padding: 36px 16px;
+
+      .footer-information.gh-footer-info {
+        grid-column: 1;
+
+        h1.gh-footer-title {
+          font-size: 1.25rem;
+          margin-bottom: 14px;
+        }
+      }
+
+      .divine-line.gh-footer-divider {
+        grid-column: 1;
+        width: 100%;
+        height: 1px;
+        min-height: 1px;
+      }
+
+      .commiting-information.gh-footer-legal {
+        grid-column: 1;
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    > header {
+      transition: none;
+    }
+  }
+}

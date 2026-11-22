@@ -1,0 +1,328 @@
+.mentor-teaching-register-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 1120px;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 4px 0 16px;
+  color: #0f172a;
+
+  .mentor-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #1e62b6;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      color: #174f94;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    &:focus-visible {
+      border-radius: 4px;
+      outline: 3px solid rgba(30, 98, 182, 0.22);
+      outline-offset: 3px;
+    }
+  }
+
+  .mentor-page-eyebrow {
+    display: inline-block;
+    margin-bottom: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(30, 98, 182, 0.1);
+    color: #1e62b6;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  .mentor-register-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+
+    h1 {
+      margin: 0;
+      padding: 0;
+      color: #0f172a;
+      font-size: 1.5rem;
+      font-weight: 700;
+      line-height: 1.3;
+      text-align: left;
+      text-transform: none;
+      text-shadow: none;
+    }
+
+    p {
+      margin: 4px 0 0;
+      color: #64748b;
+      font-size: 0.925rem;
+    }
+  }
+
+  .mentor-selected-badge {
+    padding: 8px 14px;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1e40af;
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+
+    strong {
+      font-weight: 700;
+    }
+  }
+
+  .register-form-container {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    font-size: 0.875rem;
+
+    .register-table-container {
+      width: 100%;
+      min-width: 0;
+
+      .mentor-register-card {
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+      }
+
+      .mentor-register-card__header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e2e8f0;
+        background: #f8fafc;
+
+        h2 {
+          margin: 0;
+          color: #0f172a;
+          font-size: 1rem;
+          font-weight: 700;
+        }
+
+        p {
+          margin: 4px 0 0;
+          color: #64748b;
+          font-size: 0.85rem;
+        }
+      }
+
+      .mentor-register-error {
+        margin: 16px 20px 0;
+        padding: 10px 14px;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        background: #fef2f2;
+        color: #b91c1c;
+        font-size: 0.875rem;
+      }
+
+      #teaching-register-form {
+        display: block;
+        padding: 0;
+
+        .mentor-register-scroll {
+          width: 100%;
+          max-width: 100%;
+          overflow-x: auto;
+          overscroll-behavior-x: contain;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .register-table {
+          width: 100%;
+          min-width: 720px;
+          margin: 0;
+          border-collapse: collapse;
+
+          .register-header tr th {
+            height: auto;
+            padding: 12px 16px;
+            border-right: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #475569;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-align: center;
+            text-transform: uppercase;
+            white-space: nowrap;
+
+            &:first-child {
+              width: 160px;
+              text-align: left;
+            }
+
+            &:last-child {
+              border-right: 0;
+            }
+          }
+
+          .register-body tr {
+            border-bottom: 1px solid #e2e8f0;
+
+            &:last-child {
+              border-bottom: 0;
+            }
+          }
+
+          .shift-label-cell {
+            padding: 16px;
+            border-right: 1px solid #e2e8f0;
+            background: #f8fafc;
+
+            strong {
+              display: block;
+              color: #0f172a;
+              font-size: 0.9rem;
+              font-weight: 700;
+            }
+
+            span {
+              display: block;
+              margin-top: 3px;
+              color: #64748b;
+              font-size: 0.78rem;
+            }
+          }
+
+          .custom-checkbox {
+            padding: 14px;
+            border-right: 1px solid #f1f5f9;
+            background: #fff;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.15s ease;
+
+            &:last-child {
+              border-right: 0;
+            }
+
+            &:hover,
+            &.hovered {
+              background: #f8fbff;
+            }
+
+            &:focus-visible {
+              outline: 2px solid #1e62b6;
+              outline-offset: -2px;
+            }
+
+            .custom-checkbox-inner {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 44px;
+              padding: 8px 10px;
+              border: 1px dashed #cbd5e1;
+              border-radius: 8px;
+              background: #f8fafc;
+              transition: border-color 0.15s ease, background-color 0.15s ease;
+            }
+
+            .unselected-label {
+              color: #64748b;
+              font-size: 0.8rem;
+              font-weight: 500;
+            }
+
+            &.checked {
+              background: #eff6ff;
+
+              .custom-checkbox-inner {
+                border: 1px solid #1e62b6;
+                background: #1e62b6;
+                box-shadow: 0 2px 6px rgba(30, 98, 182, 0.25);
+              }
+
+              .checkmark {
+                color: #fff;
+                font-size: 0.825rem;
+                font-weight: 700;
+              }
+            }
+          }
+        }
+      }
+
+      .mentor-register-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 16px 20px;
+        border-top: 1px solid #e2e8f0;
+        background: #f8fafc;
+      }
+
+      .mentor-cancel-button,
+      .submit-button {
+        min-height: 42px;
+        width: auto;
+        margin: 0;
+        padding: 0 18px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+      }
+
+      .mentor-cancel-button {
+        border-color: #cbd5e1;
+        background: #fff;
+        color: #334155;
+
+        &:hover {
+          background: #f1f5f9;
+        }
+      }
+
+      .submit-button {
+        border-color: #1e62b6;
+        background: #1e62b6;
+        color: #fff;
+
+        &:hover {
+          border-color: #174f94;
+          background: #174f94;
+        }
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    gap: 16px;
+
+    .mentor-register-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .register-form-container .register-table-container .mentor-register-actions {
+      flex-direction: column-reverse;
+      align-items: stretch;
+
+      .mentor-cancel-button,
+      .submit-button {
+        width: 100%;
+      }
+    }
+  }
+}

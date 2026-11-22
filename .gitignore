@@ -62,5 +62,8 @@ Thumbs.db
 /AGENTS.md
 /.agents/
 
+# Local Playwright MCP artifacts
+/.playwright-mcp/
+
 # Local test accounts - never commit credentials
 Frontend/Account-tesing.txt

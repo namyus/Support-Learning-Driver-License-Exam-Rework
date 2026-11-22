@@ -1,0 +1,107 @@
+@use "../staff-create-news-form/staff-create-news-form.scss";
+
+.update-news-container {
+    .create-news-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        min-height: 36px;
+        margin-bottom: 18px;
+        color: #1e62b6;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+
+        &:hover {
+            color: #174f94;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        &:focus-visible {
+            border-radius: 4px;
+            outline: 3px solid rgba(30, 98, 182, 0.22);
+            outline-offset: 3px;
+        }
+    }
+
+    .update-news-title {
+        margin-bottom: 26px;
+    }
+
+    .update-news-form {
+        .news-form-card-heading {
+            padding: 18px 28px;
+        }
+
+        form {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 22px 24px;
+            padding: 26px 28px 28px;
+        }
+
+        .news-form-field {
+            min-width: 0;
+        }
+
+        .news-form-field--content,
+        .news-form-actions {
+            grid-column: 1 / -1;
+        }
+
+        .clear-text-btn {
+            justify-self: end;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+
+        .news-form-actions {
+            margin-top: 2px;
+        }
+
+        .news-submit-button:disabled {
+            border-color: #94a3b8;
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+    }
+}
+
+@media (max-width: 767px) {
+    .update-news-container {
+        .create-news-back-link {
+            margin-bottom: 14px;
+        }
+
+        .update-news-title {
+            margin-bottom: 20px;
+        }
+
+        .update-news-form {
+            .news-form-card-heading,
+            form {
+                padding-right: 16px;
+                padding-left: 16px;
+            }
+
+            form {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 18px;
+            }
+
+            .news-form-field--content,
+            .news-form-actions {
+                grid-column: auto;
+            }
+
+            .news-form-actions {
+                flex-direction: row;
+                justify-content: flex-end;
+
+                button {
+                    width: auto;
+                }
+            }
+        }
+    }
+}

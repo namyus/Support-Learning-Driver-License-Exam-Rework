@@ -1,98 +1,88 @@
-import './App.scss'
-import { Navigate, Route, Routes } from 'react-router-dom'
-import { Bounce, ToastContainer } from 'react-toastify'
-import 'react-toastify/ReactToastify.css'
-import './general.scss'
-import ScrollToTop from './config/scrollToTop'
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { Bounce, ToastContainer } from 'react-toastify';
+import 'react-toastify/ReactToastify.css';
+import ScrollToTop from './config/scrollToTop';
+import { selectCurrentUser, useAppSelector } from './app/store';
 
-// Staff import
-import MentorMamagementPage from './portal/StaffPage/components/pages/mentor-management/mentor-management'
-import './portal/StaffPage/components/templates/template.scss'
-import UserManagementPage from './portal/StaffPage/components/pages/user-management/user-management'
-import MemberManagementPage from './portal/StaffPage/components/pages/member-management/member-management'
-import './portal/StaffPage/components/staff-general.scss'
-import NewsManagementPage from './portal/StaffPage/components/pages/news-management/news-management'
-import CreateNewsPage from './portal/StaffPage/components/pages/create-news/create-news'
-import HomePage from './portal/StaffPage/components/pages/home/home-page'
-import StaffLayout from './portal/StaffPage/components/layout'
-import ReportPage from './portal/StaffPage/components/pages/report/report'
-import UpdateNewsPage from './portal/StaffPage/components/pages/update-news/update-news'
+// Layout Templates
+import GuestLayout from './components/templates/guest-layout/guestLayout';
+import StaffLayout from './components/templates/staff-layout/staffLayout';
+import MentorLayout from './components/templates/mentor-layout/mentorLayout';
 
-// Guest import 
-import GuestLayout from './portal/GuestPage/layout'
-import GuestHomePage from './portal/GuestPage/components/pages/guest-home/guest-home'
-import GuestCoursePage from './portal/GuestPage/components/pages/guest-course/guest-course'
+// Authorization Pages
+import LoginPage from './pages/authorization/loginPage';
+import RegistrationPage from './pages/authorization/registrationPage';
+import ForgetPasswordPage from './pages/authorization/forgetPasswordPage';
 
-// Member import 
-import MentorInformationPage from './portal/MemberPage/components/pages/mentor-information/mentor-information'
-import MemberHomePage from './portal/MemberPage/components/pages/member-home/member-home'
-import MemberCoursePage from './portal/MemberPage/components/pages/member-course/member-course'
-import CourseVerificationPage from './portal/MemberPage/components/pages/course-verification/course-verification'
-import MemberInformationPage from './portal/MemberPage/components/pages/member-information/member-information'
-import MemberRegisteredCoursePage from './portal/MemberPage/components/pages/member-course-registerd/member-registered-course'
-import TheorySchedulePage from './portal/MemberPage/components/pages/theory-schedule/theory-schedule'
-import PracticeSchedulePage from './portal/MemberPage/components/pages/practice-schedule/practice-schedule'
-import PracticeRegisterPage from './portal/MemberPage/components/pages/practice-register-page/practice-register'
-import ExamDocumentPage from './portal/MemberPage/components/pages/exam-document/exam-document'
-import TheoryTestPage from './portal/MemberPage/components/pages/theory-test/theory-test'
-import PracticeSpecificPage from './portal/MemberPage/components/pages/practice-specific-page/practice-specific'
+// Guest Pages
+import GuestHomePage from './pages/guest/guestHomePage';
+import GuestCoursePage from './pages/guest/guestCoursePage';
 
-// Authorization page
-import { useAppSelector } from './app/store'
-import {
-  ForgetPasswordPage,
-  LoginPage,
-  RegistrationPage,
-  selectCurrentUser,
-} from './features/auth'
+// Member Pages
+import MemberHomePage from './pages/member/memberHomePage';
+import MemberCoursePage from './pages/member/memberCoursePage';
+import CourseVerificationPage from './pages/member/courseVerificationPage';
+import MemberInformationPage from './pages/member/memberInformationPage';
+import MemberRegisteredCoursePage from './pages/member/memberRegisteredCoursePage';
+import MentorInformationPage from './pages/member/mentorInformationPage';
+import TheorySchedulePage from './pages/member/theorySchedulePage';
+import PracticeSchedulePage from './pages/member/practiceSchedulePage';
+import PracticeRegisterPage from './pages/member/practiceRegisterPage';
+import PracticeSpecificPage from './pages/member/practiceSpecificPage';
+import ExamDocumentPage from './pages/member/examDocumentPage';
+import TheoryTestPage from './pages/member/theoryTestPage';
+import DoTheoryTestPage from './pages/member/doTheoryTestPage';
+import TheoryResultPage from './pages/member/theoryResultPage';
 
-// Mentor page
-import MentorHomePage from './portal/MentorPage/components/pages/mentor-home-page/mentor-home-page'
-import MentorSchedulePage from './portal/MentorPage/components/pages/teaching-schedule-page/schedule-page'
-import MentorLayout from './portal/MentorPage/layout'
-import MentorRegisterSchedule from './portal/MentorPage/components/pages/mentor-register-schedule-page/mentor-register-schedule-page'
-// import StudentsListPage from './portal/MentorPage/components/pages/students-list-page/student-list-page'
-// import MentorClassInformationPage from './portal/MentorPage/components/pages/mentor-class-information-page/mentor-class-information-page'
-// import MentorClassListPage from './portal/MentorPage/components/pages/mentor-class-list/mentor-class-list'
-// import InformationPage from './portal/MentorPage/components/pages/mentor-information-page/mentor-information-page'
-import MentorTakeAttendancePage from './portal/MentorPage/components/pages/mentor-take-attendances/mentor-take-attendance-page'
-import MentorClassRegisterPage from './portal/MentorPage/components/pages/mentor-class-register-page/mentor-class-register-page'
+// Mentor Pages
+import MentorHomePage from './pages/mentor/mentorHomePage';
+import MentorSchedulePage from './pages/mentor/mentorSchedulePage';
+import MentorRegisterSchedulePage from './pages/mentor/mentorRegisterSchedulePage';
+import MentorTakeAttendancePage from './pages/mentor/mentorTakeAttendancePage';
+import MentorClassRegisterPage from './pages/mentor/mentorClassRegisterPage';
 
-// Admin page
-import AdminPage from './portal/AdminPage/components/pages/admin-page/adminPage'
-// import AdminProfile from "./portal/AdminPage/components/molocules/admin-profile"
-import AdminProfile from "./portal/AdminPage/components/molocules/admin-profile/admin-profile";
-import CourseManagementAdminPage from './portal/AdminPage/components/pages/course-management/course-management'
-import MentorMamagementAdminPage from './portal/AdminPage/components/pages/mentor-management/mentor-management'
-import MemberManagementAdminPage from './portal/AdminPage/components/pages/member-management/member-management'
-import CreateCourseAdminPage from './portal/AdminPage/components/pages/create-course/create-course'
-import NewsManagementAdminPage from './portal/AdminPage/components/pages/news-management/news-management'
-import CreateNewsAdminPage from './portal/AdminPage/components/pages/create-news/create-news'
-import UpdateCourseAdminPage from './portal/AdminPage/components/pages/update-course/update-course'
-import UpdateNewsAdminPage from './portal/AdminPage/components/pages/update-news/update-news'
-import InactiveCourseAdminPage from './portal/AdminPage/components/pages/course-management/inactive-course'
-import ReportAdminPage from './portal/AdminPage/components/pages/report/report'
-import Home from './portal/AdminPage/components/pages/Home/home-page'
-import StaffManagementAdminPage from './portal/AdminPage/components/pages/staff-management/staff-management'
-import DoTheoryTestPage from './portal/MemberPage/components/pages/do-theory-test/theory-test'
-import TheoryResultPage from './portal/MemberPage/components/pages/theory-result/theory-result'
-import MemberDocPage from './portal/StaffPage/components/pages/member-exam-doc/member-exam-doc'
-import CreateMentorAdminPage from './portal/AdminPage/components/pages/create-mentor/create-mentor'
-import CreateStaffAdminPage from './portal/AdminPage/components/pages/create-staff/create-staff'
-import CreateExamPage from './portal/StaffPage/components/pages/create-exam/create-exam-page'
-import ExamManagementPage from './portal/StaffPage/components/pages/exam-management/exam-management'
-import ClassMamagementAdminPage from './portal/AdminPage/components/pages/class-management/class-management'
-import CreateExamAdminPage from './portal/AdminPage/components/pages/create-exam/create-exam'
-import ExamManagementAdminPage from './portal/StaffPage/components/pages/exam-management/exam-management'
-import UpdateStaffAdminPage from './portal/AdminPage/components/pages/update-staff/update-staff'
-import UpdateMentorAdminPage from './portal/AdminPage/components/pages/update-mentor/update-mentor'
-import ExamResultManagementPage from './portal/AdminPage/components/pages/exam-result-management/exam-result-management'
-import StudentManagementPage from './portal/AdminPage/components/pages/student-management/student-management'
-import { InactiveNewsTable } from './portal/StaffPage/components/molecules/news-management/news-table'
-import { CreateCourseDetail } from './portal/AdminPage/components/molocules/create-course-form/course-create-form'
-import { PracticeClassTable, TheoryClassTable } from './portal/AdminPage/components/molocules/class-management/class-table'
-import CreateTheoryLesson, { CreatePracticeLesson } from './portal/AdminPage/components/molocules/create-class-form/class-create-form'
-import InvoiceManagementPage from './portal/AdminPage/components/pages/invoice-management/invoice-management'
+// Staff Pages
+import StaffDashboardPage from './pages/staff/staffDashboardPage';
+import StaffUserManagementPage from './pages/staff/staffUserManagementPage';
+import StaffMemberManagementPage from './pages/staff/staffMemberManagementPage';
+import StaffMemberExamDocPage from './pages/staff/staffMemberExamDocPage';
+import StaffMentorManagementPage from './pages/staff/staffMentorManagementPage';
+import StaffNewsManagementPage from './pages/staff/staffNewsManagementPage';
+import StaffCreateNewsPage from './pages/staff/staffCreateNewsPage';
+import StaffUpdateNewsPage from './pages/staff/staffUpdateNewsPage';
+import StaffInactiveNewsPage from './pages/staff/staffInactiveNewsPage';
+import StaffReportPage from './pages/staff/staffReportPage';
+import StaffExamManagementPage from './pages/staff/staffExamManagementPage';
+import StaffCreateExamPage from './pages/staff/staffCreateExamPage';
+
+// Admin Pages
+import AdminPage from './pages/admin/adminPage';
+import AdminDashboardPage from './pages/admin/adminDashboardPage';
+import AdminProfilePage from './pages/admin/adminProfilePage';
+import AdminCourseManagementPage from './pages/admin/adminCourseManagementPage';
+import AdminInactiveCoursePage from './pages/admin/adminInactiveCoursePage';
+import AdminCreateCoursePage from './pages/admin/adminCreateCoursePage';
+import AdminCreateCourseDetailPage from './pages/admin/adminCreateCourseDetailPage';
+import AdminUpdateCoursePage from './pages/admin/adminUpdateCoursePage';
+import AdminStaffManagementPage from './pages/admin/adminStaffManagementPage';
+import AdminCreateStaffPage from './pages/admin/adminCreateStaffPage';
+import AdminUpdateStaffPage from './pages/admin/adminUpdateStaffPage';
+import AdminMemberManagementPage from './pages/admin/adminMemberManagementPage';
+import AdminMentorManagementPage from './pages/admin/adminMentorManagementPage';
+import AdminCreateMentorPage from './pages/admin/adminCreateMentorPage';
+import AdminUpdateMentorPage from './pages/admin/adminUpdateMentorPage';
+import AdminClassManagementPage from './pages/admin/adminClassManagementPage';
+import AdminTheoryClassPage from './pages/admin/adminTheoryClassPage';
+import AdminPracticeClassPage from './pages/admin/adminPracticeClassPage';
+import AdminCreateTheoryLessonPage from './pages/admin/adminCreateTheoryLessonPage';
+import AdminCreatePracticeLessonPage from './pages/admin/adminCreatePracticeLessonPage';
+import AdminNewsManagementPage from './pages/admin/adminNewsManagementPage';
+import AdminCreateNewsPage from './pages/admin/adminCreateNewsPage';
+import AdminUpdateNewsPage from './pages/admin/adminUpdateNewsPage';
+import AdminInvoiceManagementPage from './pages/admin/adminInvoiceManagementPage';
+import AdminReportPage from './pages/admin/adminReportPage';
+import AdminExamResultManagementPage from './pages/admin/adminExamResultManagementPage';
+import AdminStudentManagementPage from './pages/admin/adminStudentManagementPage';
 
 function App() {
   const user = useAppSelector(selectCurrentUser);
@@ -111,171 +101,147 @@ function App() {
         draggable
         pauseOnHover={false}
         theme="light"
-        className='toast-content'
-        transition={Bounce} />
+        className="toast-content"
+        transition={Bounce}
+      />
 
-      {
-        <Routes>
-          <Route path='/'>
-            {
-              user === null ? (
+      <Routes>
+        <Route path="/">
+          {user === null ? (
+            <>
+              <Route element={<GuestLayout />}>
+                <Route index element={<GuestHomePage />} />
+                <Route path="khoahoc/:month/:year" element={<GuestCoursePage />} />
+              </Route>
+              <Route path="dang-nhap" element={<LoginPage />} />
+              <Route path="dang-ky" element={<RegistrationPage />} />
+              <Route path="quen-mat-khau" element={<ForgetPasswordPage />} />
+            </>
+          ) : (
+            <>
+              <Route path="/dang-nhap" element={<LoginPage />} />
+              {user.roleId === 1 && (
                 <>
-                  <Route element={<GuestLayout />}>
-                    <Route index element={<GuestHomePage />} />
-                    <Route path='khoahoc/:month/:year' element={<GuestCoursePage />} />
+                  <Route path="/" element={<AdminPage />}>
+                    <Route index element={<Navigate to="/bang-dieu-khien" replace />} />
+                    <Route path="bang-dieu-khien" element={<AdminDashboardPage />} />
+                    <Route path="Thong-tin-ca-nhan" element={<AdminProfilePage />} />
+                    <Route path="quan-ly-khoa-hoc">
+                      <Route index element={<AdminCourseManagementPage />} />
+                      <Route path="chua-mo" element={<AdminInactiveCoursePage />} />
+                      <Route path="tao-khoa-hoc" element={<AdminCreateCoursePage />} />
+                      <Route path="chi-tiet" element={<AdminCreateCourseDetailPage />} />
+                      <Route path="cap-nhat-khoa-hoc/:courseId" element={<AdminUpdateCoursePage />} />
+                    </Route>
+                    <Route path="quan-ly-nhan-vien">
+                      <Route index element={<AdminStaffManagementPage />} />
+                      <Route path="tao-nhan-vien" element={<AdminCreateStaffPage />} />
+                      <Route path="cap-nhat-nhan-vien" element={<AdminUpdateStaffPage />} />
+                      <Route path="cap-nhat-nhan-vien/:staffId" element={<AdminUpdateStaffPage />} />
+                    </Route>
+                    <Route path="quan-ly-thanh-vien" element={<AdminMemberManagementPage />} />
+                    <Route path="quan-ly-giao-vien">
+                      <Route index element={<AdminMentorManagementPage />} />
+                      <Route path="tao-giao-vien" element={<AdminCreateMentorPage />} />
+                      <Route path="cap-nhat-giao-vien" element={<AdminUpdateMentorPage />} />
+                      <Route path="cap-nhat-giao-vien/:mentorId" element={<AdminUpdateMentorPage />} />
+                    </Route>
+                    <Route path="quan-ly-lich-hoc">
+                      <Route index element={<AdminClassManagementPage />} />
+                      <Route path="lop-ly-thuyet">
+                        <Route index element={<AdminTheoryClassPage />} />
+                        <Route path="tao-lop-hoc" element={<AdminCreateTheoryLessonPage />} />
+                      </Route>
+                      <Route path="lop-thuc-hanh">
+                        <Route index element={<AdminPracticeClassPage />} />
+                        <Route path="tao-lop-hoc" element={<AdminCreatePracticeLessonPage />} />
+                      </Route>
+                    </Route>
+                    <Route path="quan-ly-tin-tuc">
+                      <Route index element={<AdminNewsManagementPage />} />
+                      <Route path="tao-tin-tuc" element={<AdminCreateNewsPage />} />
+                      <Route path="cap-nhat-tin-tuc/:newsId" element={<AdminUpdateNewsPage />} />
+                    </Route>
+                    <Route path="quan-ly-thanh-toan">
+                      <Route index element={<AdminInvoiceManagementPage />} />
+                    </Route>
+                    <Route path="bao-cao" element={<AdminReportPage />} />
+                    <Route path="quan-ly-ket-qua" element={<AdminExamResultManagementPage />} />
+                    <Route path="quan-ly-hoc-vien" element={<AdminStudentManagementPage />} />
                   </Route>
-                  <Route path='dang-nhap' element={<LoginPage />} />
-                  <Route path='dang-ky' element={<RegistrationPage />} />
-                  <Route path='quen-mat-khau' element={<ForgetPasswordPage />} />
                 </>
-              ) : (
+              )}
+              {user.roleId === 2 && (
                 <>
-                  <Route path='/dang-nhap' element={<LoginPage />} />
-                  {user.roleId === 1 && (
-                    <>
-                      <Route path='/' element={<AdminPage />}>
-                        <Route index element={<Navigate to='/bang-dieu-khien' replace />} />
-                        <Route path='bang-dieu-khien' element={<Home />} />
-                        <Route path='Thong-tin-ca-nhan' element={<AdminProfile />} />
-                        <Route path='quan-ly-khoa-hoc'>
-                          <Route index element={<CourseManagementAdminPage />} />
-                          <Route path='chua-mo' element={<InactiveCourseAdminPage />} />
-                          <Route path='tao-khoa-hoc' element={<CreateCourseAdminPage />} />
-                          <Route path='chi-tiet' element={<CreateCourseDetail />} />
-                          <Route path='cap-nhat-khoa-hoc/:courseId' element={<UpdateCourseAdminPage />} />
-                          {/* <Route path='chi-tiet/:courseId' element={<CourseDetailInformation />} /> */}
-                        </Route>
-                        <Route path='quan-ly-nhan-vien'>
-                          <Route index element={<StaffManagementAdminPage />} />
-                          <Route path='tao-nhan-vien' element={<CreateStaffAdminPage />} />
-                          <Route path='cap-nhat-nhan-vien' element={<UpdateStaffAdminPage />} />
-                          <Route path='cap-nhat-nhan-vien/:staffId' element={<UpdateStaffAdminPage />} />
-                        </Route>
-                        <Route path='quan-ly-thanh-vien' element={<MemberManagementAdminPage />} />
-                        <Route path='quan-ly-giao-vien'>
-                          <Route index element={<MentorMamagementAdminPage />} />
-                          <Route path='tao-giao-vien' element={<CreateMentorAdminPage />} />
-                          <Route path='cap-nhat-giao-vien' element={<UpdateMentorAdminPage />} />
-                          <Route path='cap-nhat-giao-vien/:mentorId' element={<UpdateMentorAdminPage />} />
-                        </Route>
-                        <Route path='quan-ly-lich-hoc'>
-                          <Route index element={<ClassMamagementAdminPage />} />
-                          <Route path='lop-ly-thuyet'>
-                            <Route index element={<TheoryClassTable />} />
-                            <Route path='tao-lop-hoc' element={<CreateTheoryLesson />} />
-                          </Route>
-                          <Route path='lop-thuc-hanh'>
-                            <Route index element={<PracticeClassTable />} />
-                            <Route path='tao-lop-hoc' element={<CreatePracticeLesson />} />
-                          </Route>
-                        </Route>
-                        <Route path='quan-ly-tin-tuc'>
-                          <Route index element={<NewsManagementAdminPage />} />
-                          <Route path='tao-tin-tuc' element={<CreateNewsAdminPage />} />
-                          <Route path='cap-nhat-tin-tuc/:newsId' element={<UpdateNewsAdminPage />} />
-                        </Route>
-                        <Route path='quan-ly-thanh-toan'>
-                          <Route index element={<InvoiceManagementPage />} />
-                        </Route>
-                        {/* <Route path='quan-ly-lop-hoc'>
-                          <Route index element={<MemberManagementPage />} />
-                        </Route> */}
-                        <Route path='bao-cao' element={<ReportAdminPage />} />
-                        <Route path='quan-ly-ket-qua' element={<ExamResultManagementPage />} />
-                        <Route path='quan-ly-hoc-vien' element={<StudentManagementPage />} />
-                        {/* <Route path='danh-sach-thanh-vien' element={<MemberManagementPage />} /> */}
-                      </Route>
-                    </>
-                  )}
-                  {user.roleId === 2 && (
-                    <>
-                      <Route element={<StaffLayout />}>
-                        <Route index element={<HomePage />} />
-                        <Route path='quan-ly-nguoi-dung' element={<UserManagementPage />} />
-                        {/* <Route path='quan-ly-khoa-hoc'>
-                          <Route index element={<CourseManagementPage />} />
-                          <Route path='chua-mo' element={<InactiveCoursePage />} />
-                          <Route path='tao-khoa-hoc' element={<CreateCoursePage />} />
-                          <Route path='cap-nhat-khoa-hoc/:courseId' element={<UpdateCoursePage />} />
-                        </Route> */}
-                        <Route path='quan-ly-thanh-vien'>
-                          <Route index element={<MemberManagementPage />} />
-                          <Route path='don-thi/:memberId' element={<MemberDocPage />} />
-                        </Route>
-                        <Route path='quan-ly-giao-vien' element={<MentorMamagementPage />} />
-                        <Route path='quan-ly-tin-tuc'>
-                          <Route index element={<NewsManagementPage />} />
-                          <Route path='tao-tin-tuc' element={<CreateNewsPage />} />
-                          <Route path='cap-nhat-tin-tuc/:newsId' element={<UpdateNewsPage />} />
-                          <Route path='chua-kich-hoat' element={<InactiveNewsTable />} />
-                        </Route>
-                        <Route path='bao-cao' element={<ReportPage />} />
-                        <Route path='quan-ly-ky-thi'>
-                          <Route index element={<ExamManagementPage />} />
-                          <Route path='tao-ky-thi' element={<CreateExamPage />} />
-                          {/* <Route path='bai-thi' element={ }/> */}
-                        </Route>
-                        <Route path='quan-ly-ky-thi'>
-                          <Route index element={<ExamManagementAdminPage />} />
-                          <Route path='tao-ky-thi' element={<CreateExamAdminPage />} />
-                        </Route>
-                      </Route>
-                    </>
-                  )}
-                  {user.roleId === 3 && (
-                    <>
-                      <Route element={<MentorLayout />}>
-                        <Route index element={<MentorHomePage />} />
-                        <Route path='lich-day'>
-                          <Route index element={<MentorSchedulePage />} />
-                          {/* <Route path='chi-tiet-lich-day'>
-                            <Route index element={<MentorClassInformationPage />} />
-                          </Route> */}
-                          <Route path='diem-danh/:classId' element={<MentorTakeAttendancePage />} />
-                        </Route>
-                        <Route path='danh-sach-khoa-hoc-giao-vien'>
-                          <Route index element={<MentorClassRegisterPage />} />
-                          <Route path='dang-ki-lich-day/:courseId' element={<MentorRegisterSchedule />} />
-                        </Route>
-                      </Route>
-                    </>
-                  )}
-                  {user.roleId === 4 && (
-                    <>
-                      <Route index element={<MemberHomePage />} />
-                      <Route path='khoahoc/:month/:year' element={<MemberCoursePage />} />
-                      <Route path='khoahoc/xac-nhan-khoa-hoc/:courseName' element={<CourseVerificationPage />} />
-                      <Route path='thong-tin-ca-nhan/:username' element={<MemberInformationPage />} />
-                      {/* <Route path='thong-tin-ca-nhan/cap-nhat' element={<UpdateInformationPage />} /> */}
-                      <Route path='/khoa-hoc-cua-ban'>
-                        <Route index element={<MemberRegisteredCoursePage />} />
-                        <Route path='thong-tin-giao-vien' element={<MentorInformationPage />} />
-                        <Route path='lich-hoc-ly-thuyet' element={<TheorySchedulePage />} />
-                        <Route path='lich-hoc-thuc-hanh' element={<PracticeSchedulePage />} />
-                      </Route>
-                      <Route path='danh-sach-khoa-hoc'>
-                        <Route index element={<PracticeRegisterPage />} />
-                        <Route path='khoa-hoc/:mentorId/:courseId' element={<PracticeSpecificPage />} />
-                      </Route>
-                      <Route path='ho-so-thi'>
-                        <Route index element={<ExamDocumentPage />} />
-                        {/* <Route path='cap-nhat' element={<ExamDocumentUpdatePage />} /> */}
-                      </Route>
-                      <Route path='kiem-tra'>
-                        <Route index element={<TheoryTestPage />} />
-                        <Route path='bai-lam' element={<DoTheoryTestPage />} />
-                        <Route path='ket-qua' element={<TheoryResultPage />} />
-                      </Route>
-                    </>
-                  )}
+                  <Route element={<StaffLayout />}>
+                    <Route index element={<StaffDashboardPage />} />
+                    <Route path="quan-ly-nguoi-dung" element={<StaffUserManagementPage />} />
+                    <Route path="quan-ly-thanh-vien">
+                      <Route index element={<StaffMemberManagementPage />} />
+                      <Route path="don-thi/:memberId" element={<StaffMemberExamDocPage />} />
+                    </Route>
+                    <Route path="quan-ly-giao-vien" element={<StaffMentorManagementPage />} />
+                    <Route path="quan-ly-tin-tuc">
+                      <Route index element={<StaffNewsManagementPage />} />
+                      <Route path="tao-tin-tuc" element={<StaffCreateNewsPage />} />
+                      <Route path="cap-nhat-tin-tuc/:newsId" element={<StaffUpdateNewsPage />} />
+                      <Route path="chua-kich-hoat" element={<StaffInactiveNewsPage />} />
+                    </Route>
+                    <Route path="bao-cao" element={<StaffReportPage />} />
+                    <Route path="quan-ly-ky-thi">
+                      <Route index element={<StaffExamManagementPage />} />
+                      <Route path="tao-ky-thi" element={<StaffCreateExamPage />} />
+                    </Route>
+                  </Route>
                 </>
-              )
-            }
-          </Route>
-        </Routes>
-      }
+              )}
+              {user.roleId === 3 && (
+                <>
+                  <Route element={<MentorLayout />}>
+                    <Route index element={<MentorHomePage />} />
+                    <Route path="lich-day">
+                      <Route index element={<MentorSchedulePage />} />
+                      <Route path="diem-danh/:classId" element={<MentorTakeAttendancePage />} />
+                    </Route>
+                    <Route path="danh-sach-khoa-hoc-giao-vien">
+                      <Route index element={<MentorClassRegisterPage />} />
+                      <Route path="dang-ki-lich-day/:courseId" element={<MentorRegisterSchedulePage />} />
+                    </Route>
+                  </Route>
+                </>
+              )}
+              {user.roleId === 4 && (
+                <>
+                  <Route index element={<MemberHomePage />} />
+                  <Route path="khoahoc/:month/:year" element={<MemberCoursePage />} />
+                  <Route path="khoahoc/xac-nhan-khoa-hoc/:courseName" element={<CourseVerificationPage />} />
+                  <Route path="thong-tin-ca-nhan/:username" element={<MemberInformationPage />} />
+                  <Route path="/khoa-hoc-cua-ban">
+                    <Route index element={<MemberRegisteredCoursePage />} />
+                    <Route path="thong-tin-giao-vien" element={<MentorInformationPage />} />
+                    <Route path="lich-hoc-ly-thuyet" element={<TheorySchedulePage />} />
+                    <Route path="lich-hoc-thuc-hanh" element={<PracticeSchedulePage />} />
+                  </Route>
+                  <Route path="danh-sach-khoa-hoc">
+                    <Route index element={<PracticeRegisterPage />} />
+                    <Route path="khoa-hoc/:mentorId/:courseId" element={<PracticeSpecificPage />} />
+                  </Route>
+                  <Route path="ho-so-thi">
+                    <Route index element={<ExamDocumentPage />} />
+                  </Route>
+                  <Route path="kiem-tra">
+                    <Route index element={<TheoryTestPage />} />
+                    <Route path="bai-lam" element={<DoTheoryTestPage />} />
+                    <Route path="ket-qua" element={<TheoryResultPage />} />
+                  </Route>
+                </>
+              )}
+            </>
+          )}
+        </Route>
+      </Routes>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
