@@ -1,20 +1,21 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import { CircularProgress } from '@mui/material';
 import './member-theory-schedule.scss';
-import api from '../../../config/axios';
+import { useAppDispatch } from '../../../app/store';
+import { fetchTheoryLessonsByStudentId } from '../../../features/classes/classesSlice';
+import { fetchMemberByUserId } from '../../../features/members/membersSlice';
+import type { MemberRecord } from '../../../features/members/membersTypes';
+import { fetchMentorById } from '../../../features/mentors/mentorsSlice';
+import type { MentorRecord } from '../../../features/mentors/mentorsTypes';
+import { fetchStudentByMemberId } from '../../../features/students/studentsSlice';
+import {
+  getApiErrorStatus,
+  type ApiRejectedPayload,
+} from '../../../features/shared/apiError';
 
 interface StoredUser {
   userID?: number | string;
-}
-
-interface MemberRecord {
-  memberID?: number | string;
-}
-
-interface StudentRecord {
-  studentId?: string | number;
 }
 
 interface TheoryLessonItem {
@@ -23,11 +24,6 @@ interface TheoryLessonItem {
   mentorId?: number | string;
   lessonContent?: string;
   location?: string;
-}
-
-interface MentorRecord {
-  mentorId?: number | string;
-  fullName?: string;
 }
 
 function readSessionJson<T>(key: string): T | null {
@@ -43,17 +39,18 @@ function readSessionJson<T>(key: string): T | null {
 }
 
 function isExpectedNoLessonsError(err: unknown): boolean {
-  if (!axios.isAxiosError(err) || err.response?.status !== 404) {
+  if (getApiErrorStatus(err) !== 404) {
     return false;
   }
-  const data = err.response.data as { error?: unknown } | undefined;
+  const errorText = (err as ApiRejectedPayload | null)?.error;
   return (
-    typeof data?.error === 'string' &&
-    data.error.trim() === 'Không tìm thấy buổi học!'
+    typeof errorText === 'string' &&
+    errorText.trim() === 'Không tìm thấy buổi học!'
   );
 }
 
 function TheorySchedule() {
+  const dispatch = useAppDispatch();
   const [theorySchedule, setTheorySchedule] = useState<TheoryLessonItem[]>([]);
   const [mentor, setMentor] = useState<MentorRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -68,8 +65,7 @@ function TheorySchedule() {
       if (!memberData?.memberID) {
         const user = readSessionJson<StoredUser>('loginedUser');
         if (user?.userID != null) {
-          const memberRes = await api.get<MemberRecord>('Member/' + user.userID);
-          memberData = memberRes.data;
+          memberData = await dispatch(fetchMemberByUserId(user.userID)).unwrap();
           if (memberData?.memberID != null) {
             sessionStorage.setItem('loginedMember', JSON.stringify(memberData));
           }
@@ -83,10 +79,10 @@ function TheorySchedule() {
         return;
       }
 
-      const studentRes = await api.get<StudentRecord>(
-        'Student/' + memberData.memberID
-      );
-      const studentData = studentRes.data;
+      const studentRes = await dispatch(
+        fetchStudentByMemberId(memberData.memberID)
+      ).unwrap();
+      const studentData = studentRes.student;
 
       if (!studentData?.studentId) {
         setTheorySchedule([]);
@@ -97,10 +93,10 @@ function TheorySchedule() {
 
       let lessons: TheoryLessonItem[] = [];
       try {
-        const lessonRes = await api.get<TheoryLessonItem[]>(
-          'Lesson/theory/student/' + studentData.studentId
-        );
-        lessons = Array.isArray(lessonRes.data) ? lessonRes.data : [];
+        const lessonData = await dispatch(
+          fetchTheoryLessonsByStudentId(studentData.studentId)
+        ).unwrap();
+        lessons = Array.isArray(lessonData) ? lessonData : [];
       } catch (err) {
         if (isExpectedNoLessonsError(err)) {
           lessons = [];
@@ -121,10 +117,10 @@ function TheorySchedule() {
 
       if (uniqueMentorIds.length > 0) {
         try {
-          const mentorRes = await api.get<MentorRecord>(
-            'Mentor/' + uniqueMentorIds[0]
-          );
-          setMentor(mentorRes.data);
+          const mentorRes = await dispatch(
+            fetchMentorById(uniqueMentorIds[0])
+          ).unwrap();
+          setMentor(mentorRes.mentor);
         } catch (err) {
           console.log(err);
           setMentor(null);
@@ -133,7 +129,7 @@ function TheorySchedule() {
         setMentor(null);
       }
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
+      if (getApiErrorStatus(error) === 404) {
         setTheorySchedule([]);
         setMentor(null);
       } else {
@@ -145,7 +141,7 @@ function TheorySchedule() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     void loadTheorySchedule();

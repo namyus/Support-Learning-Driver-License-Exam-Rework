@@ -1,32 +1,32 @@
 import { useCallback, useEffect, useState } from 'react';
 import './member-practice-specific-register.scss';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import { CircularProgress } from '@mui/material';
-import api from '../../../config/axios';
+import { useAppDispatch } from '../../../app/store';
+import {
+  fetchPracticeClassesByCourseAndMentor,
+  fetchPracticeLessonsByStudentId,
+  registerClassStudent,
+} from '../../../features/classes/classesSlice';
+import { fetchMemberByUserId } from '../../../features/members/membersSlice';
+import { fetchMentorById } from '../../../features/mentors/mentorsSlice';
+import type { MentorRecord } from '../../../features/mentors/mentorsTypes';
+import {
+  getApiErrorStatus,
+  type ApiRejectedPayload,
+} from '../../../features/shared/apiError';
+import { fetchStudentByMemberId } from '../../../features/students/studentsSlice';
+import type { StudentRecord } from '../../../features/students/studentsTypes';
 
 interface StoredUser {
   userID?: number | string;
 }
 
-interface MemberRecord {
-  memberID?: number | string;
-}
-
-interface StudentRecord {
-  studentId?: string | number;
-}
-
-interface MentorRecord {
-  mentorId?: number | string;
-  fullName?: string;
-}
-
 interface PracticeClassItem {
   classId: number | string;
-  dayOfWeek?: number;
-  shift?: string;
+  dayOfWeek?: number | string;
+  shift?: string | number;
 }
 
 interface PracticeScheduleItem {
@@ -47,18 +47,18 @@ function readStoredUser(): StoredUser | null {
 }
 
 function isExpectedNoLessonsError(err: unknown): boolean {
-  if (!axios.isAxiosError(err) || err.response?.status !== 404) {
+  if (getApiErrorStatus(err) !== 404) {
     return false;
   }
-  const data = err.response.data as { error?: unknown } | undefined;
+  const errorText = (err as ApiRejectedPayload | null)?.error;
   return (
-    typeof data?.error === 'string' &&
-    data.error.trim() === 'Không tìm thấy buổi học!'
+    typeof errorText === 'string' &&
+    errorText.trim() === 'Không tìm thấy buổi học!'
   );
 }
 
-function formatPracticeDay(dayOfWeek?: number): string {
-  switch (dayOfWeek) {
+function formatPracticeDay(dayOfWeek?: number | string): string {
+  switch (Number(dayOfWeek)) {
     case 2:
       return 'Thứ hai';
     case 3:
@@ -79,6 +79,7 @@ function formatPracticeDay(dayOfWeek?: number): string {
 }
 
 function PracticeSpecificRegister() {
+  const dispatch = useAppDispatch();
   const user = readStoredUser();
   const userID = user?.userID;
 
@@ -110,31 +111,27 @@ function PracticeSpecificRegister() {
     try {
       const [classResult, mentorResult, memberResult] = await Promise.all([
         courseId && mentorId
-          ? api
-              .get<PracticeClassItem[]>(
-                'Class/course/mentor/practice?courseId=' +
-                  courseId +
-                  '&mentorId=' +
-                  mentorId
-              )
-              .then((res) => (Array.isArray(res.data) ? res.data : []))
+          ? dispatch(
+              fetchPracticeClassesByCourseAndMentor({ courseId, mentorId })
+            )
+              .unwrap()
+              .then((res) => (Array.isArray(res) ? res : []))
               .catch((err: unknown) => {
-                if (axios.isAxiosError(err) && err.response?.status === 404) {
+                if (getApiErrorStatus(err) === 404) {
                   return [] as PracticeClassItem[];
                 }
                 throw err;
               })
           : Promise.resolve([] as PracticeClassItem[]),
         mentorId
-          ? api
-              .get<MentorRecord>('Mentor/' + mentorId)
-              .then((res) => res.data)
+          ? dispatch(fetchMentorById(mentorId))
+              .unwrap()
+              .then((res) => res.mentor)
               .catch(() => null)
           : Promise.resolve(null),
         userID != null
-          ? api
-              .get<MemberRecord>('Member/' + userID)
-              .then((res) => res.data)
+          ? dispatch(fetchMemberByUserId(userID))
+              .unwrap()
               .catch(() => null)
           : Promise.resolve(null),
       ]);
@@ -145,10 +142,10 @@ function PracticeSpecificRegister() {
       if (memberResult?.memberID != null) {
         let studentData: StudentRecord | null = null;
         try {
-          const studentRes = await api.get<StudentRecord>(
-            'Student/' + memberResult.memberID
-          );
-          studentData = studentRes.data;
+          const studentRes = await dispatch(
+            fetchStudentByMemberId(memberResult.memberID)
+          ).unwrap();
+          studentData = studentRes.student;
           setStudent(studentData);
           sessionStorage.setItem('loginedStudent', JSON.stringify(studentData));
         } catch (err) {
@@ -158,11 +155,11 @@ function PracticeSpecificRegister() {
 
         if (studentData?.studentId != null) {
           try {
-            const scheduleRes = await api.get<PracticeScheduleItem[]>(
-              'Lesson/practice/student/' + studentData.studentId
-            );
+            const scheduleData = await dispatch(
+              fetchPracticeLessonsByStudentId(studentData.studentId)
+            ).unwrap();
             setPracticeSchedule(
-              Array.isArray(scheduleRes.data) ? scheduleRes.data : []
+              Array.isArray(scheduleData) ? scheduleData : []
             );
           } catch (err) {
             if (isExpectedNoLessonsError(err)) {
@@ -187,7 +184,7 @@ function PracticeSpecificRegister() {
     } finally {
       setIsLoading(false);
     }
-  }, [courseId, mentorId, userID]);
+  }, [courseId, dispatch, mentorId, userID]);
 
   useEffect(() => {
     void loadSpecificRegisterData();
@@ -203,51 +200,49 @@ function PracticeSpecificRegister() {
     }
     setIsRegistering(true);
     try {
-      const response = await api.post('ClassStudent', {
-        studentId: studentId,
-        classId: classId,
-      });
+      const response = await dispatch(
+        registerClassStudent({
+          studentId: studentId,
+          classId: classId,
+        })
+      ).unwrap();
       if (response.status === 200) {
         toast.success('Đăng ký thành công!');
         navigate('/khoa-hoc-cua-ban');
       }
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
-        const serverError = (
-          error.response?.data as { error?: unknown } | undefined
-        )?.error;
-        const messageText =
-          typeof serverError === 'string' ? serverError.trim() : '';
+      const status = getApiErrorStatus(error);
+      const serverError = (error as ApiRejectedPayload | null)?.error;
+      const messageText =
+        typeof serverError === 'string' ? serverError.trim() : '';
 
-        if (status === 409) {
-          if (messageText.toLowerCase().includes('đã tồn tại trong lớp học')) {
-            toast.warning('Bạn đã đăng ký lớp thực hành này rồi.', {
-              autoClose: 7000,
-              pauseOnHover: true,
-              closeOnClick: true,
-            });
-          } else if (messageText.toLowerCase().includes('đủ học viên')) {
-            toast.warning('Lớp thực hành đã đủ số lượng học viên.');
-          } else if (messageText) {
-            toast.warning(messageText);
-          } else {
-            toast.warning(
-              'Không thể đăng ký lớp thực hành này. Vui lòng kiểm tra thông tin hoặc liên hệ trung tâm.'
-            );
-          }
-          return;
-        }
-
-        if (status === 400 && messageText.toLowerCase().includes('đủ học viên')) {
+      if (status === 409) {
+        if (messageText.toLowerCase().includes('đã tồn tại trong lớp học')) {
+          toast.warning('Bạn đã đăng ký lớp thực hành này rồi.', {
+            autoClose: 7000,
+            pauseOnHover: true,
+            closeOnClick: true,
+          });
+        } else if (messageText.toLowerCase().includes('đủ học viên')) {
           toast.warning('Lớp thực hành đã đủ số lượng học viên.');
-          return;
+        } else if (messageText) {
+          toast.warning(messageText);
+        } else {
+          toast.warning(
+            'Không thể đăng ký lớp thực hành này. Vui lòng kiểm tra thông tin hoặc liên hệ trung tâm.'
+          );
         }
+        return;
+      }
 
-        if (messageText) {
-          toast.error(messageText);
-          return;
-        }
+      if (status === 400 && messageText.toLowerCase().includes('đủ học viên')) {
+        toast.warning('Lớp thực hành đã đủ số lượng học viên.');
+        return;
+      }
+
+      if (messageText) {
+        toast.error(messageText);
+        return;
       }
 
       toast.error(

@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
 import './admin-class-table.scss';
-import api from '../../../config/axios';
 import { Link, useNavigate } from "react-router-dom";
 import { Button, Modal } from "react-bootstrap";
 import {
@@ -12,24 +11,15 @@ import {
   BsJournalText,
   BsSearch,
 } from "react-icons/bs";
+import { useAppDispatch, useAppSelector } from "../../../app/store";
+import {
+  fetchClasses,
+  fetchLessonsByClassId,
+  selectClassesList,
+} from "../../../features/classes/classesSlice";
+import type { ClassRecord, LessonRecord } from "../../../features/classes/classesTypes";
 
-interface ClassItem {
-  classId: number | string;
-  mentorName: string;
-  courseId: string;
-  isTheoryClass: boolean;
-  dayOfWeek?: string | number;
-  shift?: number | string;
-}
-
-interface LessonItem {
-  lessonId?: number | string;
-  lessonContent: string;
-  date: string;
-  location: string;
-}
-
-function formatDate(dbDate: string): string {
+function formatDate(dbDate?: string): string {
   if (!dbDate) return "—";
   const date = new Date(dbDate);
   if (Number.isNaN(date.getTime())) return "—";
@@ -41,7 +31,8 @@ function formatDate(dbDate: string): string {
 
 // ----------------- Class table -----------------
 function ClassTable() {
-  const [classs, setClasss] = useState<ClassItem[]>([]);
+  const dispatch = useAppDispatch();
+  const classs = useAppSelector(selectClassesList);
   const [searchValue, setSearchValue] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,16 +43,14 @@ function ClassTable() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const response = await api.get("Class");
-      const res: ClassItem[] = Array.isArray(response.data) ? response.data : [];
-      setClasss(res);
+      await dispatch(fetchClasses()).unwrap();
     } catch (error) {
       console.error(error);
       setErrorMessage("Không thể tải danh sách lớp học. Vui lòng thử lại.");
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     void getAllClasss();
@@ -341,7 +330,8 @@ export default ClassTable;
 
 // ----------------- Theory class table -----------------
 export function TheoryClassTable() {
-  const [classs, setClasss] = useState<ClassItem[]>([]);
+  const dispatch = useAppDispatch();
+  const [classs, setClasss] = useState<ClassRecord[]>([]);
   const [searchValue, setSearchValue] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [classInfoLoaded, setClassInfoLoaded] = useState(false);
@@ -349,7 +339,7 @@ export function TheoryClassTable() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const recordPage = 10;
   const navigate = useNavigate();
-  const [lesson, setLesson] = useState<LessonItem[]>([]);
+  const [lesson, setLesson] = useState<LessonRecord[]>([]);
 
   const [show, setShow] = useState(false);
 
@@ -360,8 +350,7 @@ export function TheoryClassTable() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const response = await api.get("Class");
-      const res: ClassItem[] = Array.isArray(response.data) ? response.data : [];
+      const res = await dispatch(fetchClasses()).unwrap();
       const resValid = res.filter((classItem) => classItem.isTheoryClass);
       setClasss(resValid);
     } catch (error) {
@@ -372,16 +361,15 @@ export function TheoryClassTable() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
   const detailsClick = async (classId: number | string) => {
     setClassInfoLoaded(false);
     try {
-      const response = await api.get("Lesson/class/" + classId);
-      const res: LessonItem[] = Array.isArray(response.data)
-        ? response.data
-        : [];
-      setLesson(res);
+      const { lessons } = await dispatch(
+        fetchLessonsByClassId(classId)
+      ).unwrap();
+      setLesson(lessons);
     } catch (error) {
       console.error(error);
       setLesson([]);
@@ -436,8 +424,8 @@ export function TheoryClassTable() {
   };
 
   // Fix BUG-ADM-12: Store courseId consistently as a plain string
-  const handleCreateButton = (courseId: string) => {
-    localStorage.setItem("courseId", String(courseId));
+  const handleCreateButton = (courseId?: string) => {
+    localStorage.setItem("courseId", String(courseId ?? ""));
     navigate("tao-lop-hoc");
   };
 
@@ -760,13 +748,14 @@ export function TheoryClassTable() {
 
 // ----------------- Practice Class Table -----------------
 export function PracticeClassTable() {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const [classs, setClasss] = useState<ClassItem[]>([]);
+  const [classs, setClasss] = useState<ClassRecord[]>([]);
   const [searchValue, setSearchValue] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const recordPage = 10;
   const [classInfoLoaded, setClassInfoLoaded] = useState(false);
-  const [lesson, setLesson] = useState<LessonItem[]>([]);
+  const [lesson, setLesson] = useState<LessonRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -778,11 +767,10 @@ export function PracticeClassTable() {
   const detailsClick = async (classId: number | string) => {
     setClassInfoLoaded(false);
     try {
-      const response = await api.get("Lesson/class/" + classId);
-      const res: LessonItem[] = Array.isArray(response.data)
-        ? response.data
-        : [];
-      setLesson(res);
+      const { lessons } = await dispatch(
+        fetchLessonsByClassId(classId)
+      ).unwrap();
+      setLesson(lessons);
     } catch (error) {
       console.error(error);
       setLesson([]);
@@ -796,8 +784,7 @@ export function PracticeClassTable() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const response = await api.get("Class");
-      const res: ClassItem[] = Array.isArray(response.data) ? response.data : [];
+      const res = await dispatch(fetchClasses()).unwrap();
       const resValid = res.filter(
         (classItem) => classItem.isTheoryClass === false
       );
@@ -810,7 +797,7 @@ export function PracticeClassTable() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     void getAllClasss();
@@ -819,10 +806,10 @@ export function PracticeClassTable() {
   // Fix BUG-ADM-12: Store courseId as a plain string (matching TheoryClassTable), not JSON.stringify
   const handleCreateButton = (
     classId: number | string,
-    courseId: string
+    courseId?: string
   ) => {
     localStorage.setItem("classId", String(classId));
-    localStorage.setItem("courseId", String(courseId));
+    localStorage.setItem("courseId", String(courseId ?? ""));
     navigate("tao-lop-hoc");
   };
 

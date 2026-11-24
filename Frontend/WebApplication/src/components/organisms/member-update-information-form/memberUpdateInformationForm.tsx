@@ -4,9 +4,12 @@ import './member-update-information-form.scss'
 import { toast } from 'react-toastify';
 import { useCallback, useState, useEffect } from 'react'
 import { Backdrop, CircularProgress } from '@mui/material';
-import api from '../../../config/axios';
+import { useAppDispatch } from '../../../app/store';
+import { fetchMemberByUserId } from '../../../features/members/membersSlice';
+import { fetchStudentByMemberId } from '../../../features/students/studentsSlice';
 
 function UpdateInformationForm() {
+    const dispatch = useAppDispatch();
     const user = sessionStorage.getItem('loginedUser') ? JSON.parse(sessionStorage.getItem('loginedUser')) : null;
     const userId = user?.userID;
 
@@ -32,26 +35,26 @@ function UpdateInformationForm() {
     const getMemberById = useCallback(async () => {
         if (userId == null) return;
         try {
-            const response = await api.get('Member/' + userId);
-            const res = response.data;
-            setInputData(res);
-            setMember(res);
+            const res = await dispatch(fetchMemberByUserId(userId)).unwrap();
+            if (res) {
+                setInputData((prev) => ({ ...prev, ...res }));
+                setMember(res);
+            }
             setIsLoading(false);
         } catch (err) {
             console.log(err);
         }
-    }, [userId]);
+    }, [dispatch, userId]);
 
     const getStudentById = useCallback(async () => {
         if (memberId == null) return;
         try {
-            const response = await api.get('Student/' + memberId);
-            const res = response.data;
-            setStudent(res);
+            const res = await dispatch(fetchStudentByMemberId(memberId)).unwrap();
+            setStudent(res.student);
         } catch (err) {
             console.error(err);
         }
-    }, [memberId]);
+    }, [dispatch, memberId]);
 
     useEffect(() => {
         getMemberById();

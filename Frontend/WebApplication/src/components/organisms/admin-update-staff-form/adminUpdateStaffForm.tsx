@@ -1,21 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import api from '../../../config/axios';
 import './admin-update-staff-form.scss';
 import { toast } from 'react-toastify';
+import { useAppDispatch } from '../../../app/store';
+import {
+  fetchStaffById,
+  updateStaff as updateStaffThunk,
+} from '../../../features/staff/staffSlice';
+import type { UpdateStaffPayload } from '../../../features/staff/staffTypes';
+import type { ApiRejectedPayload } from '../../../features/shared/apiError';
 
-interface StaffUpdateFormData {
-  staffId: number;
-  fullName: string;
-  email: string;
-  phone: string;
-}
+type StaffUpdateFormData = UpdateStaffPayload;
 
 interface LocationState {
   staffId?: number;
 }
 
 function UpdateStaffForm() {
+  const dispatch = useAppDispatch();
   const { staffId: paramStaffId } = useParams<{ staffId?: string }>();
   const location = useLocation();
   const navigate = useNavigate();
@@ -50,8 +52,8 @@ function UpdateStaffForm() {
     setLoadError(null);
 
     try {
-      const response = await api.get(`Staff/${parsedStaffId}`);
-      const staff = response.data;
+      const response = await dispatch(fetchStaffById(parsedStaffId)).unwrap();
+      const staff = response.staff;
       setInputData({
         staffId: Number(staff?.staffId ?? parsedStaffId),
         fullName: staff?.fullName ?? '',
@@ -60,12 +62,10 @@ function UpdateStaffForm() {
       });
     } catch (err: unknown) {
       console.error(err);
-      const axiosErr = err as {
-        response?: { status?: number; data?: { error?: string } };
-      };
-      if (axiosErr.response?.status === 404) {
+      const rejected = err as ApiRejectedPayload | undefined;
+      if (rejected?.status === 404) {
         setLoadError(
-          axiosErr.response.data?.error ||
+          rejected.error ||
             `Không tìm thấy thông tin nhân viên có mã #${parsedStaffId}.`
         );
       } else {
@@ -74,7 +74,7 @@ function UpdateStaffForm() {
     } finally {
       setIsLoading(false);
     }
-  }, [isValidStaffId, parsedStaffId]);
+  }, [dispatch, isValidStaffId, parsedStaffId]);
 
   useEffect(() => {
     void getStaffById();
@@ -106,21 +106,21 @@ function UpdateStaffForm() {
     try {
       setIsSubmitting(true);
       setError(null);
-      await api.put('Staff/update', {
-        staffId: inputData.staffId,
-        fullName: inputData.fullName,
-        email: inputData.email,
-        phone: inputData.phone,
-      });
+      await dispatch(
+        updateStaffThunk({
+          staffId: inputData.staffId,
+          fullName: inputData.fullName,
+          email: inputData.email,
+          phone: inputData.phone,
+        })
+      ).unwrap();
       toast.success('Cập nhật nhân viên thành công!');
       navigate('/quan-ly-nhan-vien');
     } catch (err: unknown) {
-      const axiosErr = err as {
-        response?: { status?: number; data?: { error?: string } };
-      };
-      if (axiosErr.response?.data?.error) {
-        setError(axiosErr.response.data.error);
-      } else if (axiosErr.response?.status === 409) {
+      const rejected = err as ApiRejectedPayload | undefined;
+      if (rejected?.error) {
+        setError(rejected.error);
+      } else if (rejected?.status === 409) {
         setError('Email đã tồn tại.');
       } else {
         setError('Không thể cập nhật thông tin nhân viên. Vui lòng thử lại.');

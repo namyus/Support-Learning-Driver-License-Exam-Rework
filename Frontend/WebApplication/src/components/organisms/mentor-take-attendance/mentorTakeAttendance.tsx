@@ -1,8 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import './mentor-take-attendance.scss';
-import api from '../../../config/axios';
 import { toast } from 'react-toastify';
+import { useAppDispatch } from '../../../app/store';
+import {
+  fetchLessonAttendance,
+  updateLessonAttendance,
+} from '../../../features/classes/classesSlice';
+import { getApiErrorStatus } from '../../../features/shared/apiError';
 
 interface Student {
   classStudentId: string;
@@ -14,6 +19,7 @@ interface Student {
 }
 
 function StudentsAttendances() {
+  const dispatch = useAppDispatch();
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -40,15 +46,13 @@ function StudentsAttendances() {
     setLoadError(null);
     try {
       if (classId) {
-        const response = await api.get(
-          `/Lesson/attendance/${classId}/${formattedDate}`
-        );
-        setStudents(Array.isArray(response.data) ? response.data : []);
+        const attendanceData = await dispatch(
+          fetchLessonAttendance({ classId, date: formattedDate })
+        ).unwrap();
+        setStudents(Array.isArray(attendanceData) ? attendanceData : []);
       }
     } catch (error) {
-      const status = (error as { response?: { status?: number } } | null)
-        ?.response?.status;
-      if (status === 404) {
+      if (getApiErrorStatus(error) === 404) {
         setStudents([]);
       } else {
         console.error('Error fetching student data:', error);
@@ -58,7 +62,7 @@ function StudentsAttendances() {
     } finally {
       setIsLoading(false);
     }
-  }, [classId, formattedDate]);
+  }, [classId, dispatch, formattedDate]);
 
   useEffect(() => {
     void fetchData();
@@ -76,7 +80,7 @@ function StudentsAttendances() {
       }));
 
       if (classId && formattedDate) {
-        await api.patch('/Lesson/attendance', attendanceData);
+        await dispatch(updateLessonAttendance(attendanceData)).unwrap();
         toast.success('Điểm danh học viên thành công!');
       } else {
         console.error('ClassId or date is missing from session storage');

@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import './member-registered-course.scss';
-import axios from 'axios';
-import api from '../../../config/axios';
 import { CircularProgress } from '@mui/material';
 import {
   selectCurrentUser,
@@ -10,6 +8,12 @@ import {
   useAppSelector,
 } from '../../../app/store';
 import { fetchCourseById } from '../../../features/courses/coursesSlice';
+import { fetchTestByStudentId } from '../../../features/exams/examsSlice';
+import { fetchMemberByUserId } from '../../../features/members/membersSlice';
+import type { MemberRecord } from '../../../features/members/membersTypes';
+import { fetchStudentByMemberId } from '../../../features/students/studentsSlice';
+import type { StudentRecord } from '../../../features/students/studentsTypes';
+import { getApiErrorStatus } from '../../../features/shared/apiError';
 
 const PAYMENT_POLL_INTERVAL_MS = 10000;
 
@@ -17,20 +21,10 @@ interface StoredUser {
   userID?: number | string;
 }
 
-interface MemberRecord {
-  memberID?: number | string;
-  courseId?: string | number;
-  isPaid?: boolean;
-}
-
 interface CourseRecord {
   courseId?: string | number;
   name?: string;
   startDate?: string;
-}
-
-interface StudentRecord {
-  studentId?: string | number;
 }
 
 interface TheoryStatusRecord {
@@ -109,12 +103,12 @@ function RegisteredCourse() {
 
       let studentData: StudentRecord | null = null;
       try {
-        const studentRes = await api.get<StudentRecord>(
-          'Student/' + memberData.memberID
-        );
-        studentData = studentRes.data;
+        const studentRes = await dispatch(
+          fetchStudentByMemberId(memberData.memberID)
+        ).unwrap();
+        studentData = studentRes.student;
       } catch (err) {
-        if (!axios.isAxiosError(err) || err.response?.status !== 404) {
+        if (getApiErrorStatus(err) !== 404) {
           console.error(err);
         }
       }
@@ -125,14 +119,14 @@ function RegisteredCourse() {
 
       if (studentData?.studentId != null) {
         try {
-          const theoryRes = await api.get<TheoryStatusRecord>(
-            'TestByStudentId?studentId=' + studentData.studentId
-          );
+          const theoryData = await dispatch(
+            fetchTestByStudentId(studentData.studentId)
+          ).unwrap();
           if (isMountedRef.current) {
-            setTheoryStatus(theoryRes.data);
+            setTheoryStatus(theoryData);
           }
         } catch (err) {
-          if (!axios.isAxiosError(err) || err.response?.status !== 404) {
+          if (getApiErrorStatus(err) !== 404) {
             console.error(err);
           }
           if (isMountedRef.current) {
@@ -160,8 +154,7 @@ function RegisteredCourse() {
     setErrorMessage(null);
 
     try {
-      const memberRes = await api.get<MemberRecord>('Member/' + userID);
-      const memberData = memberRes.data;
+      const memberData = await dispatch(fetchMemberByUserId(userID)).unwrap();
 
       if (!isMountedRef.current) {
         return;
@@ -187,7 +180,7 @@ function RegisteredCourse() {
       if (!isMountedRef.current) {
         return;
       }
-      if (axios.isAxiosError(err) && err.response?.status === 404) {
+      if (getApiErrorStatus(err) === 404) {
         confirmedPaidRef.current = false;
         setMember(null);
         setCourse(null);
@@ -203,7 +196,7 @@ function RegisteredCourse() {
         setIsLoading(false);
       }
     }
-  }, [loadDependentRecords, userID]);
+  }, [dispatch, loadDependentRecords, userID]);
 
   useEffect(() => {
     void loadEnrolledCourse();
@@ -221,8 +214,7 @@ function RegisteredCourse() {
 
     isSyncInFlightRef.current = true;
     try {
-      const memberRes = await api.get<MemberRecord>('Member/' + userID);
-      const latestMember = memberRes.data;
+      const latestMember = await dispatch(fetchMemberByUserId(userID)).unwrap();
 
       if (!isMountedRef.current || !latestMember || latestMember.memberID == null) {
         return;
@@ -239,7 +231,7 @@ function RegisteredCourse() {
     } finally {
       isSyncInFlightRef.current = false;
     }
-  }, [course, loadDependentRecords, userID]);
+  }, [course, dispatch, loadDependentRecords, userID]);
 
   const isPaid = Boolean(member?.isPaid);
 

@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { isAxiosError } from 'axios';
 import Countdown, { CountdownRenderProps } from 'react-countdown';
 import { Spinner } from 'react-bootstrap';
 import {
@@ -11,7 +10,16 @@ import {
 } from 'react-icons/ai';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import api from '../../../config/axios';
+import { useAppDispatch } from '../../../app/store';
+import {
+  checkStudentAnswer,
+  fetchStudentQuestions,
+} from '../../../features/exams/examsSlice';
+import { fetchMemberByUserId } from '../../../features/members/membersSlice';
+import type { MemberRecord } from '../../../features/members/membersTypes';
+import { fetchStudentByMemberId } from '../../../features/students/studentsSlice';
+import type { StudentRecord } from '../../../features/students/studentsTypes';
+import { getApiErrorStatus } from '../../../features/shared/apiError';
 import './member-theory-test-paper.scss';
 
 const EXAM_DURATION_MS = 20 * 60 * 1000;
@@ -22,15 +30,6 @@ const ANSWER_OPTIONS = [1, 2, 3, 4] as const;
 interface LoginedUser {
   userID?: number;
   userId?: number;
-}
-
-interface MemberRecord {
-  memberID: number;
-  courseId?: string | null;
-}
-
-interface StudentRecord {
-  studentId: string;
 }
 
 interface ExamQuestion {
@@ -53,6 +52,7 @@ function readSessionJson<T>(key: string): T | null {
 }
 
 function TheoryTestPaper() {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const [start, setStart] = useState<boolean>(false);
@@ -92,8 +92,7 @@ function TheoryTestPaper() {
           return;
         }
 
-        const memberResponse = await api.get<MemberRecord>(`Member/${userId}`);
-        memberData = memberResponse.data ?? null;
+        memberData = await dispatch(fetchMemberByUserId(userId)).unwrap();
         if (memberData) {
           sessionStorage.setItem('loginedMember', JSON.stringify(memberData));
         }
@@ -105,8 +104,10 @@ function TheoryTestPaper() {
         return;
       }
 
-      const studentResponse = await api.get<StudentRecord>(`Student/${memberData.memberID}`);
-      const studentData = studentResponse.data ?? null;
+      const studentResponse = await dispatch(
+        fetchStudentByMemberId(memberData.memberID)
+      ).unwrap();
+      const studentData = studentResponse.student;
 
       if (!studentData?.studentId) {
         setErrorMessage('Không tìm thấy mã học viên để tải đề kiểm tra.');
@@ -116,21 +117,21 @@ function TheoryTestPaper() {
 
       setStudent(studentData);
 
-      const questionResponse = await api.get<ExamQuestion[]>(
-        `GetStudentQuestion/${encodeURIComponent(studentData.studentId)}`
-      );
-      const loadedQuestions = Array.isArray(questionResponse.data) ? questionResponse.data : [];
+      const questionData = await dispatch(
+        fetchStudentQuestions(studentData.studentId)
+      ).unwrap();
+      const loadedQuestions = Array.isArray(questionData) ? questionData : [];
 
       setQuestion(loadedQuestions);
       setAnswer((prev) => {
         const updatedAnswer = [...prev];
-        updatedAnswer[35] = studentData.studentId.toString();
+        updatedAnswer[35] = studentData.studentId!.toString();
         answerRef.current = updatedAnswer;
         return updatedAnswer;
       });
     } catch (err) {
       console.error(err);
-      if (isAxiosError(err) && err.response?.status === 404) {
+      if (getApiErrorStatus(err) === 404) {
         setQuestion([]);
         setErrorMessage(
           'Chưa có bộ câu hỏi kiểm tra nào được gán cho mã học viên của bạn.'
@@ -141,7 +142,7 @@ function TheoryTestPaper() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     void loadExamData();
@@ -161,15 +162,12 @@ function TheoryTestPaper() {
           currentAnswers[35] = student.studentId.toString();
         }
         const answerStrings = currentAnswers.map((val) => val.toString());
-        const answerJSON = JSON.stringify(answerStrings);
 
-        const response = await api.put('CheckStudentAnswer', answerJSON, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        const resultData = await dispatch(
+          checkStudentAnswer(answerStrings)
+        ).unwrap();
 
-        localStorage.setItem('studentAnswer', JSON.stringify(response.data));
+        localStorage.setItem('studentAnswer', JSON.stringify(resultData));
 
         toast.success(
           isAutoSubmit ? 'Hết thời gian làm bài! Hệ thống đã tự động nộp bài.' : 'Nộp bài thành công!',
@@ -199,7 +197,7 @@ function TheoryTestPaper() {
         });
       }
     },
-    [navigate, student]
+    [dispatch, navigate, student]
   );
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {

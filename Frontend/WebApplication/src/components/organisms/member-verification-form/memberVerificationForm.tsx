@@ -2,8 +2,13 @@ import React, { useEffect, useState } from 'react';
 import './member-verification-form.scss';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import axios from 'axios';
-import api from '../../../config/axios';
+import { useAppDispatch } from '../../../app/store';
+import {
+  createMember as createMemberThunk,
+  fetchMemberByUserIdQuery,
+} from '../../../features/members/membersSlice';
+import type { CreateMemberPayload } from '../../../features/members/membersTypes';
+import type { ApiRejectedPayload } from '../../../features/shared/apiError';
 
 interface StoredUser {
   userID?: number | string;
@@ -12,23 +17,7 @@ interface StoredUser {
   email?: string;
 }
 
-interface VerificationInputData {
-  dob: string;
-  gender: string;
-  nationality: string;
-  nation: string;
-  temporaryAddress: string;
-  residenceAddress: string;
-  identityCardNumber: string;
-  cardProvidedDate: string;
-  cardProvidedLocation: string;
-  isPaid: boolean;
-  courseId: string | number | null;
-  userId: string | number | null;
-  fullName: string;
-  phone: string;
-  email: string;
-}
+type VerificationInputData = CreateMemberPayload;
 
 function readStoredUser(): StoredUser | null {
   const raw = sessionStorage.getItem('loginedUser');
@@ -55,6 +44,7 @@ function readStoredCourseId(): string | number | null {
 }
 
 function VerificationForm() {
+  const dispatch = useAppDispatch();
   const user = readStoredUser();
   const userId = user?.userID ?? null;
   const [member, setMember] = useState<unknown>();
@@ -147,9 +137,9 @@ function VerificationForm() {
       }
 
       setIsSubmitting(true);
-      const response = await api.post('/Member/add', inputData);
-      setMember(response.data);
-      sessionStorage.setItem('loginedMember', JSON.stringify(response.data));
+      const createdMember = await dispatch(createMemberThunk(inputData)).unwrap();
+      setMember(createdMember);
+      sessionStorage.setItem('loginedMember', JSON.stringify(createdMember));
       toast.success(`Bạn đã đăng ký khoá học ${courseName} thành công`);
       localStorage.removeItem('courseID');
       navigate('/khoa-hoc-cua-ban');
@@ -158,14 +148,12 @@ function VerificationForm() {
         behavior: 'instant',
       });
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        console.log(err.response);
-        const serverError = (err.response?.data as { error?: string } | undefined)
-          ?.error;
-        setError(serverError || 'Đăng ký khóa học thất bại. Vui lòng thử lại.');
-      } else {
-        setError('Đăng ký khóa học thất bại. Vui lòng thử lại.');
-      }
+      const rejected = err as ApiRejectedPayload | undefined;
+      setError(
+        rejected?.error ||
+          rejected?.message ||
+          'Đăng ký khóa học thất bại. Vui lòng thử lại.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -186,15 +174,15 @@ function VerificationForm() {
     }
     const fetchData = async () => {
       try {
-        const response = await api.get(`/Member?userID=${userId}`);
-        console.log(response.data);
-        sessionStorage.setItem('loginedMember', JSON.stringify(response.data));
+        const data = await dispatch(fetchMemberByUserIdQuery(userId)).unwrap();
+        console.log(data);
+        sessionStorage.setItem('loginedMember', JSON.stringify(data));
       } catch {
         // Handle any errors that occur during the API request
       }
     };
     void fetchData();
-  }, [member, userId]);
+  }, [dispatch, member, userId]);
 
   useEffect(() => {
     window.scroll({

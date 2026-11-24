@@ -1,11 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import './admin-exam-table.scss';
 import { Link } from 'react-router-dom';
-import api from '../../../config/axios';
 import { toast } from 'react-toastify';
+import { useAppDispatch, useAppSelector } from '../../../app/store';
+import {
+    createTestForExam,
+    fetchExams,
+    selectExamsList,
+} from '../../../features/exams/examsSlice';
 
 function ExamTable() {
-    const [data, setData] = useState([]);
+    const dispatch = useAppDispatch();
+    const data = useAppSelector(selectExamsList);
     const [searchValue, setSearchValue] = useState('');
 
     // Pagination variables
@@ -15,7 +21,7 @@ function ExamTable() {
     const firsIndex = lastIndex - recordPage;
 
     // Apply filtering to data before pagination
-    const filteredData = data.filter(course => course.courseId.toLowerCase().includes(searchValue));
+    const filteredData = data.filter(course => (course.courseId ?? '').toLowerCase().includes(searchValue));
 
     // Pagination
     const records = filteredData.slice(firsIndex, lastIndex);
@@ -23,15 +29,13 @@ function ExamTable() {
     const numbers = [...Array(npage + 1).keys()].slice(1);
 
     // Fetch all courses
-    const getAllExams = async () => {
+    const getAllExams = useCallback(async () => {
         try {
-            const response = await api.get('Exam/list');
-            const res = response.data;
-            setData(res);
+            await dispatch(fetchExams()).unwrap();
         } catch (err) {
             console.log(err);
         }
-    };
+    }, [dispatch]);
 
     // Handle page navigation
     const prePage = () => {
@@ -65,16 +69,9 @@ function ExamTable() {
         return `${day}/${month}/${year}`;
     }
 
-    const handleCreate = async (examId) => {
+    const handleCreate = async (examId: number | string) => {
         try {
-            const examIDJson = JSON.stringify(examId);
-            await api.post('Test/add',
-                {
-                    Headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    examId: examIDJson
-                });
+            await dispatch(createTestForExam(examId)).unwrap();
 
             const notificationMessage = "Tạo bài thi thành công!";
             localStorage.setItem("notificationMessage", notificationMessage);
@@ -86,8 +83,8 @@ function ExamTable() {
     }
 
     useEffect(() => {
-        getAllExams();
-    }, []);
+        void getAllExams();
+    }, [getAllExams]);
 
     useEffect(() => {
         const storedNotificationMessage = localStorage.getItem("notificationMessage");

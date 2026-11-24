@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
-import api from '../../../config/axios';
 import './staff-course-table.scss';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAppDispatch } from '../../../app/store';
+import { useAppDispatch, useAppSelector } from '../../../app/store';
+import { createPracticeLessonAuto } from '../../../features/classes/classesSlice';
 import {
     deactivateCourse,
     fetchCourseList,
 } from '../../../features/courses/coursesSlice';
+import {
+    fetchMembers,
+    selectMembersList,
+} from '../../../features/members/membersSlice';
 
 function CourseTable() {
     const dispatch = useAppDispatch();
+    const member = useAppSelector(selectMembersList);
     const [data, setData] = useState([]);
     const [searchValue, setSearchValue] = useState('');
     //count number of members have enrolled into course
@@ -32,8 +37,6 @@ function CourseTable() {
 
     const navigate = useNavigate();
 
-    const [member, setMember] = useState([]);
-
     // Fetch all courses
     const getAllCourse = useCallback(async () => {
         try {
@@ -47,13 +50,11 @@ function CourseTable() {
 
     const getMember = useCallback(async () => {
         try {
-            const response = await api.get('/Members');
-            const res = response.data;
-            setMember(res);
+            await dispatch(fetchMembers()).unwrap();
         } catch (err) {
             console.log(err);
         }
-    }, []);
+    }, [dispatch]);
 
     // Handle page navigation
     const prePage = () => {
@@ -115,7 +116,7 @@ function CourseTable() {
 
     const handleCreateLesson = async (courseId) => {
         try {
-            await api.post('Lesson/createPracticeLessonAuto?courseId=' +  courseId);
+            await dispatch(createPracticeLessonAuto(courseId)).unwrap();
             // setTimeout(() => {
             //     location.reload();
             // }, 0.1);

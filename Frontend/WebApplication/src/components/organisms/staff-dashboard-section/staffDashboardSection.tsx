@@ -18,7 +18,10 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import api from '../../../config/axios';
+import { useAppDispatch } from '../../../app/store';
+import { fetchExams } from '../../../features/exams/examsSlice';
+import { fetchMembers } from '../../../features/members/membersSlice';
+import { fetchMentors } from '../../../features/mentors/mentorsSlice';
 
 type LoadStatus = 'loading' | 'success' | 'error';
 
@@ -63,6 +66,7 @@ const paymentColors = ['#0f766e', '#f59e0b', '#94a3b8'];
 const statusColors = ['#1e62b6', '#94a3b8', '#f59e0b'];
 
 function HomePage() {
+  const dispatch = useAppDispatch();
   const [members, setMembers] = useState<DashboardResource<MemberRecord>>(initialResource);
   const [mentors, setMentors] = useState<DashboardResource<MentorRecord>>(initialResource);
   const [exams, setExams] = useState<DashboardResource<ExamRecord>>(initialResource);
@@ -70,35 +74,32 @@ function HomePage() {
   const loadMembers = useCallback(async () => {
     setMembers((current) => ({ ...current, status: 'loading' }));
     try {
-      const response = await api.get<unknown>('Members');
-      if (!Array.isArray(response.data)) throw new Error('Invalid Members response');
-      setMembers({ status: 'success', records: response.data as MemberRecord[] });
+      const records = await dispatch(fetchMembers()).unwrap();
+      setMembers({ status: 'success', records: records as MemberRecord[] });
     } catch {
       setMembers({ status: 'error', records: [] });
     }
-  }, []);
+  }, [dispatch]);
 
   const loadMentors = useCallback(async () => {
     setMentors((current) => ({ ...current, status: 'loading' }));
     try {
-      const response = await api.get<unknown>('Mentor/list');
-      if (!Array.isArray(response.data)) throw new Error('Invalid Mentor response');
-      setMentors({ status: 'success', records: response.data as MentorRecord[] });
+      const records = await dispatch(fetchMentors()).unwrap();
+      setMentors({ status: 'success', records: records as MentorRecord[] });
     } catch {
       setMentors({ status: 'error', records: [] });
     }
-  }, []);
+  }, [dispatch]);
 
   const loadExams = useCallback(async () => {
     setExams((current) => ({ ...current, status: 'loading' }));
     try {
-      const response = await api.get<unknown>('Exam/list');
-      if (!Array.isArray(response.data)) throw new Error('Invalid Exam response');
-      setExams({ status: 'success', records: response.data as ExamRecord[] });
+      const records = await dispatch(fetchExams()).unwrap();
+      setExams({ status: 'success', records: records as ExamRecord[] });
     } catch {
       setExams({ status: 'error', records: [] });
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     void loadMembers();

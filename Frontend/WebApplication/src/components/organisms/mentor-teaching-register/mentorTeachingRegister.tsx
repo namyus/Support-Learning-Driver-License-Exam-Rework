@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import './mentor-teaching-register.scss';
-import api from '../../../config/axios';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { useAppDispatch } from '../../../app/store';
+import { addPracticeClassesByMentor } from '../../../features/classes/classesSlice';
+import { fetchMentorByUserId } from '../../../features/mentors/mentorsSlice';
+import type { ApiRejectedPayload } from '../../../features/shared/apiError';
 
 interface CheckboxTableState {
   checkboxes: {
@@ -16,6 +19,7 @@ interface MentorRecord {
 }
 
 const MentorTeachingRegister: React.FC = () => {
+  const dispatch = useAppDispatch();
   const user = sessionStorage.getItem('loginedUser')
     ? JSON.parse(sessionStorage.getItem('loginedUser')!)
     : null;
@@ -49,12 +53,17 @@ const MentorTeachingRegister: React.FC = () => {
   const getMentorByUID = useCallback(async () => {
     try {
       if (userId == null) return;
-      const response = await api.get('Mentor/user/' + userId);
-      setMentor(response.data);
+      const mentorData = await dispatch(fetchMentorByUserId(userId)).unwrap();
+      if (mentorData?.mentorId != null) {
+        setMentor({
+          mentorId: mentorData.mentorId,
+          fullName: mentorData.fullName ?? undefined,
+        });
+      }
     } catch (err) {
       console.error(err);
     }
-  }, [userId]);
+  }, [dispatch, userId]);
 
   const handleMouseEnter = (key: string) => {
     setHoveredCheckbox(key);
@@ -119,15 +128,9 @@ const MentorTeachingRegister: React.FC = () => {
     );
 
     try {
-      const response = await api.post(
-        'Class/addClassPracticeByMentor',
-        formattedListObjects,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const response = await dispatch(
+        addPracticeClassesByMentor(formattedListObjects)
+      ).unwrap();
       if (response.status !== 200) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       } else {
@@ -136,9 +139,7 @@ const MentorTeachingRegister: React.FC = () => {
       }
     } catch (error) {
       console.error('Error:', error);
-      const apiErr = (
-        error as { response?: { data?: { error?: string } } } | null
-      )?.response?.data?.error;
+      const apiErr = (error as ApiRejectedPayload | null)?.error;
       setErrorMessage(
         apiErr || 'Không thể đăng ký lịch dạy lúc này. Vui lòng kiểm tra và thử lại.'
       );

@@ -2,27 +2,19 @@ import { useCallback, useEffect, useState } from 'react';
 import './member-practice-list-table.scss';
 import { Link } from 'react-router-dom';
 import { CircularProgress } from '@mui/material';
-import api from '../../../config/axios';
 import { useAppDispatch } from '../../../app/store';
 import { fetchCourseById } from '../../../features/courses/coursesSlice';
+import { fetchMemberByUserId } from '../../../features/members/membersSlice';
+import { fetchMentors } from '../../../features/mentors/mentorsSlice';
+import type { MentorRecord } from '../../../features/mentors/mentorsTypes';
 
 interface StoredUser {
   userID?: number | string;
 }
 
-interface MemberRecord {
-  memberID?: number | string;
-  courseId?: string | number;
-}
-
 interface CourseRecord {
   courseId?: string | number;
   name?: string;
-}
-
-interface MentorItem {
-  mentorId?: number | string;
-  fullName?: string;
 }
 
 function readStoredUser(): StoredUser | null {
@@ -42,7 +34,7 @@ function PracticeList() {
   const user = readStoredUser();
   const userID = user?.userID;
 
-  const [mentors, setMentors] = useState<MentorItem[]>([]);
+  const [mentors, setMentors] = useState<MentorRecord[]>([]);
   const [course, setCourse] = useState<CourseRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -52,16 +44,15 @@ function PracticeList() {
     setErrorMessage(null);
 
     try {
-      const [mentorRes, memberRes] = await Promise.all([
-        api.get<MentorItem[]>('Mentor/list'),
+      const [mentorList, memberData] = await Promise.all([
+        dispatch(fetchMentors()).unwrap(),
         userID != null
-          ? api.get<MemberRecord>('Member/' + userID)
+          ? dispatch(fetchMemberByUserId(userID)).unwrap()
           : Promise.resolve(null),
       ]);
 
-      setMentors(Array.isArray(mentorRes.data) ? mentorRes.data : []);
+      setMentors(Array.isArray(mentorList) ? mentorList : []);
 
-      const memberData = memberRes?.data ?? null;
       if (memberData) {
         sessionStorage.setItem('loginedMember', JSON.stringify(memberData));
       }

@@ -1,29 +1,28 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import api from '../../../config/axios';
+import { useAppDispatch } from '../../../app/store';
+import {
+  deactivateNews,
+  fetchInactiveNews,
+  fetchNewsList,
+} from '../../../features/news/newsSlice';
+import type { NewsRecord } from '../../../features/news/newsTypes';
+import {
+  getApiErrorStatus,
+  type ApiRejectedPayload,
+} from '../../../features/shared/apiError';
 import './staff-news-table.scss';
 
-interface NewsRecord {
-  newsId: number;
-  title?: string | null;
-  description?: string | null;
-  content?: string | null;
-  status: boolean;
-  createdTime?: string;
-}
-
 const isExpectedEmptyNewsResponse = (error: unknown): boolean => {
-  const response = (
-    error as { response?: { status?: number; data?: { error?: string } } } | null
-  )?.response;
   return (
-    response?.status === 404 &&
-    response.data?.error === 'Không tìm thấy tin tức!'
+    getApiErrorStatus(error) === 404 &&
+    (error as ApiRejectedPayload | null)?.error === 'Không tìm thấy tin tức!'
   );
 };
 
 function NewsTable() {
+  const dispatch = useAppDispatch();
   function truncateText(text: string | null | undefined, maxLength: number) {
     const safeText = String(text ?? '');
     if (safeText.length <= maxLength) {
@@ -37,13 +36,13 @@ function NewsTable() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
-  const getAllNews = async () => {
+  const getAllNews = useCallback(async () => {
     setIsLoading(true);
     setLoadError(false);
     try {
-      const response = await api.get('News/list');
-      const res: NewsRecord[] = Array.isArray(response.data)
-        ? [...response.data]
+      const responseData = await dispatch(fetchNewsList()).unwrap();
+      const res: NewsRecord[] = Array.isArray(responseData)
+        ? [...responseData]
         : [];
       setData(res.reverse());
     } catch (err) {
@@ -58,7 +57,7 @@ function NewsTable() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [dispatch]);
 
   const navigate = useNavigate();
 
@@ -87,7 +86,7 @@ function NewsTable() {
 
   useEffect(() => {
     void getAllNews();
-  }, []);
+  }, [getAllNews]);
 
   const prePage = () => {
     if (safePage > 1) {
@@ -107,7 +106,7 @@ function NewsTable() {
 
   const handleDelete = async (newsId: number) => {
     try {
-      await api.delete('News/deactivate/' + newsId);
+      await dispatch(deactivateNews(newsId)).unwrap();
       toast.success('Xóa thành công!');
       await getAllNews();
     } catch (err) {
@@ -348,6 +347,7 @@ function NewsTable() {
 export default NewsTable;
 
 export function InactiveNewsTable() {
+  const dispatch = useAppDispatch();
   function truncateText(text: string | null | undefined, maxLength: number) {
     const safeText = String(text ?? '');
     if (safeText.length <= maxLength) {
@@ -361,13 +361,13 @@ export function InactiveNewsTable() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
-  const getAllNews = async () => {
+  const getAllNews = useCallback(async () => {
     setIsLoading(true);
     setLoadError(false);
     try {
-      const response = await api.get('/News/inactive-news');
-      const res: NewsRecord[] = Array.isArray(response.data)
-        ? [...response.data]
+      const responseData = await dispatch(fetchInactiveNews()).unwrap();
+      const res: NewsRecord[] = Array.isArray(responseData)
+        ? [...responseData]
         : [];
       setData(res.reverse());
     } catch (err) {
@@ -382,7 +382,7 @@ export function InactiveNewsTable() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [dispatch]);
 
   const navigate = useNavigate();
 
@@ -408,7 +408,7 @@ export function InactiveNewsTable() {
 
   useEffect(() => {
     void getAllNews();
-  }, []);
+  }, [getAllNews]);
 
   const prePage = () => {
     if (safePage > 1) {
@@ -428,7 +428,7 @@ export function InactiveNewsTable() {
 
   const handleDelete = async (newsId: number) => {
     try {
-      await api.delete('News/deactivate/' + newsId);
+      await dispatch(deactivateNews(newsId)).unwrap();
       toast.success('Xóa thành công!');
       await getAllNews();
     } catch (err) {

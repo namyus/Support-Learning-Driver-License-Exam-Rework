@@ -1,21 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../../config/axios';
 import './admin-create-mentor-form.scss';
 import { toast } from 'react-toastify';
-
-interface CreateMentorPayload {
-  username: string;
-  password: string;
-  fullName: string;
-  residenceAddress: string;
-  phone: string;
-  email: string;
-  isTeachingTheory: boolean;
-  isTeachingPractice: boolean;
-}
+import { useAppDispatch } from '../../../app/store';
+import { createMentor as createMentorThunk } from '../../../features/mentors/mentorsSlice';
+import type { CreateMentorPayload } from '../../../features/mentors/mentorsTypes';
+import type { ApiRejectedPayload } from '../../../features/shared/apiError';
 
 function CreateMentorForm() {
+  const dispatch = useAppDispatch();
   const [inputData, setInputData] = useState<CreateMentorPayload>({
     username: '',
     password: '',
@@ -57,16 +50,14 @@ function CreateMentorForm() {
     try {
       setIsSubmitting(true);
       setError(null);
-      await api.post('Mentor/add', inputData);
+      await dispatch(createMentorThunk(inputData)).unwrap();
       toast.success('Tạo giáo viên thành công!');
       navigate('/quan-ly-giao-vien');
     } catch (err: unknown) {
-      const axiosErr = err as {
-        response?: { status?: number; data?: { error?: string } };
-      };
-      if (axiosErr.response?.data?.error) {
-        setError(axiosErr.response.data.error);
-      } else if (axiosErr.response?.status === 409) {
+      const rejected = err as ApiRejectedPayload | undefined;
+      if (rejected?.error) {
+        setError(rejected.error);
+      } else if (rejected?.status === 409) {
         setError('Tên đăng nhập hoặc email đã tồn tại.');
       } else {
         setError('Không thể tạo giáo viên. Vui lòng thử lại.');

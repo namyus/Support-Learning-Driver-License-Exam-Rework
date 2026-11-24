@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
 import './admin-create-course-form.scss';
-import api from '../../../config/axios';
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Button, Modal } from "react-bootstrap";
@@ -20,6 +19,7 @@ import {
   fetchCourseList,
 } from "../../../features/courses/coursesSlice";
 import type { ApiRejectedPayload } from "../../../features/courses/coursesTypes";
+import { fetchTheoryMentors } from "../../../features/mentors/mentorsSlice";
 
 interface MentorOption {
   mentorId: string;
@@ -98,13 +98,13 @@ function CreateCourseForm() {
 
   const getListMentorId = useCallback(async () => {
     try {
-      const response = await api.get("Mentor/theory");
-      setMentorName(Array.isArray(response.data) ? response.data : []);
+      const res = (await dispatch(fetchTheoryMentors()).unwrap()) as MentorOption[];
+      setMentorName(Array.isArray(res) ? res : []);
     } catch (err) {
       const msg = getApiErrorMessage(err, "");
       if (msg) setError(msg);
     }
-  }, []);
+  }, [dispatch]);
 
   const getCourseIdList = useCallback(async () => {
     try {

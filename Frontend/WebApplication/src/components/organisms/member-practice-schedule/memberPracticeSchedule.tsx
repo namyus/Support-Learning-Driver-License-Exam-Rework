@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import { CircularProgress } from '@mui/material';
 import './member-practice-schedule.scss';
-import api from '../../../config/axios';
+import { useAppDispatch } from '../../../app/store';
+import { fetchPracticeLessonsByStudentId } from '../../../features/classes/classesSlice';
+import { fetchMemberByUserId } from '../../../features/members/membersSlice';
+import { fetchMentorById } from '../../../features/mentors/mentorsSlice';
+import type { MentorRecord } from '../../../features/mentors/mentorsTypes';
+import { fetchStudentByMemberId } from '../../../features/students/studentsSlice';
+import {
+  getApiErrorStatus,
+  type ApiRejectedPayload,
+} from '../../../features/shared/apiError';
 
 interface StoredUser {
   userID?: number | string;
-}
-
-interface MemberRecord {
-  memberID?: number | string;
-}
-
-interface StudentRecord {
-  studentId?: string | number;
 }
 
 interface PracticeLessonItem {
@@ -25,11 +25,6 @@ interface PracticeLessonItem {
   date?: string;
   attendance?: boolean;
   mentorId?: number | string;
-}
-
-interface MentorRecord {
-  mentorId?: number | string;
-  fullName?: string;
 }
 
 function readStoredUser(): StoredUser | null {
@@ -45,13 +40,13 @@ function readStoredUser(): StoredUser | null {
 }
 
 function isExpectedNoLessonsError(err: unknown): boolean {
-  if (!axios.isAxiosError(err) || err.response?.status !== 404) {
+  if (getApiErrorStatus(err) !== 404) {
     return false;
   }
-  const data = err.response.data as { error?: unknown } | undefined;
+  const errorText = (err as ApiRejectedPayload | null)?.error;
   return (
-    typeof data?.error === 'string' &&
-    data.error.trim() === 'Không tìm thấy buổi học!'
+    typeof errorText === 'string' &&
+    errorText.trim() === 'Không tìm thấy buổi học!'
   );
 }
 
@@ -77,6 +72,7 @@ function formatDayOfWeek(day?: string): string {
 }
 
 function PracticeSchedule() {
+  const dispatch = useAppDispatch();
   const user = readStoredUser();
   const userID = user?.userID;
 
@@ -99,8 +95,7 @@ function PracticeSchedule() {
     setErrorMessage(null);
 
     try {
-      const memberRes = await api.get<MemberRecord>('Member/' + userID);
-      const memberData = memberRes.data;
+      const memberData = await dispatch(fetchMemberByUserId(userID)).unwrap();
       if (!memberData || memberData.memberID == null) {
         setPracticeSchedule([]);
         setMentor(null);
@@ -110,10 +105,10 @@ function PracticeSchedule() {
 
       sessionStorage.setItem('loginedMember', JSON.stringify(memberData));
 
-      const studentRes = await api.get<StudentRecord>(
-        'Student/' + memberData.memberID
-      );
-      const studentData = studentRes.data;
+      const studentRes = await dispatch(
+        fetchStudentByMemberId(memberData.memberID)
+      ).unwrap();
+      const studentData = studentRes.student;
       if (!studentData?.studentId) {
         setPracticeSchedule([]);
         setMentor(null);
@@ -123,10 +118,10 @@ function PracticeSchedule() {
 
       let lessons: PracticeLessonItem[] = [];
       try {
-        const lessonRes = await api.get<PracticeLessonItem[]>(
-          'Lesson/practice/student/' + studentData.studentId
-        );
-        lessons = Array.isArray(lessonRes.data) ? lessonRes.data : [];
+        const lessonData = await dispatch(
+          fetchPracticeLessonsByStudentId(studentData.studentId)
+        ).unwrap();
+        lessons = Array.isArray(lessonData) ? lessonData : [];
       } catch (err) {
         if (isExpectedNoLessonsError(err)) {
           lessons = [];
@@ -149,10 +144,10 @@ function PracticeSchedule() {
 
       if (uniqueMentorIds.length === 1) {
         try {
-          const mentorRes = await api.get<MentorRecord>(
-            'Mentor/' + uniqueMentorIds[0]
-          );
-          setMentor(mentorRes.data);
+          const mentorRes = await dispatch(
+            fetchMentorById(uniqueMentorIds[0])
+          ).unwrap();
+          setMentor(mentorRes.mentor);
         } catch (err) {
           console.error(err);
           setMentor(null);
@@ -161,7 +156,7 @@ function PracticeSchedule() {
         setMentor(null);
       }
     } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.status === 404) {
+      if (getApiErrorStatus(err) === 404) {
         setPracticeSchedule([]);
         setMentor(null);
       } else {
@@ -173,7 +168,7 @@ function PracticeSchedule() {
     } finally {
       setIsLoading(false);
     }
-  }, [userID]);
+  }, [dispatch, userID]);
 
   const formatDate = (dbDate?: string) => {
     if (!dbDate) {

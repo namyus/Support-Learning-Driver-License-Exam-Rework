@@ -1,10 +1,12 @@
 import './mentor-profile-information.scss'
-import api from '../../../config/axios'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { Backdrop, CircularProgress } from '@mui/material';
+import { useAppDispatch } from '../../../app/store';
+import { fetchMentorByUserId } from '../../../features/mentors/mentorsSlice';
 
 function MentorInformation() {
+  const dispatch = useAppDispatch();
   const user = sessionStorage.getItem('loginedUser') ? JSON.parse(sessionStorage.getItem('loginedUser')) : null;
   const userId = user?.userID;
   const [mentor, setMentor] = useState(null);
@@ -19,13 +21,13 @@ function MentorInformation() {
   const getMentorbyId = useCallback(async () => {
     if (userId == null) return;
     try {
-      const response = await api.get('Mentor/user' + userId);
-      setMentor(response.data);
-      sessionStorage.setItem('loginedMentor', JSON.stringify(response.data));
+      const mentorData = await dispatch(fetchMentorByUserId(userId)).unwrap();
+      setMentor(mentorData);
+      sessionStorage.setItem('loginedMentor', JSON.stringify(mentorData));
     } catch (error) {
       console.log(error);
     }
-  }, [userId]);
+  }, [dispatch, userId]);
 
   useEffect(() => {
     if (userId != null) {

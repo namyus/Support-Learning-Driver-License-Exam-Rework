@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
-import api from '../../../config/axios';
 import { toast } from 'react-toastify';
 import { useAppDispatch } from '../../../app/store';
 import { fetchCourseList } from '../../../features/courses/coursesSlice';
+import { createExam } from '../../../features/exams/examsSlice';
+import type { ApiRejectedPayload } from '../../../features/shared/apiError';
+import { fetchStaffByUserId } from '../../../features/staff/staffSlice';
 import './staff-create-exam-form.scss'
 
 function CreateExam() {
@@ -31,12 +33,12 @@ function CreateExam() {
     const getStaffByUID = useCallback(async () => {
         if (userId == null) return;
         try {
-            const response = await api.get(`Staff/user/` + userId);
-            setStaff(response.data);
+            const staffData = await dispatch(fetchStaffByUserId(userId)).unwrap();
+            setStaff(staffData);
         } catch (error) {
             console.log(error);
         }
-    }, [userId]);
+    }, [dispatch, userId]);
 
     const createNewExam = async () => {
         try {
@@ -45,14 +47,15 @@ function CreateExam() {
                 return;
             }
 
-            await api.post('Exam/add', inputData);
+            await dispatch(createExam(inputData)).unwrap();
             toast.success("Tạo kỳ thi thành công");
             setError(null);
             navigate('/quan-ly-ky-thi');
 
         } catch (err) {
-            if (err.response?.data?.error) {
-                setError(err.response.data.error);
+            const apiErr = (err as ApiRejectedPayload | null)?.error;
+            if (apiErr) {
+                setError(apiErr);
                 return;
             }
         }

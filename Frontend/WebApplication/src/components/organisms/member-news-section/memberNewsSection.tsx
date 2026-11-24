@@ -1,9 +1,13 @@
 import './member-news-section.scss';
 import NewsImg from '../../../../assets/imgs/news/news-img.jpeg';
 import { useCallback, useEffect, useState } from 'react';
-import axios from 'axios';
 import { Button, Modal } from 'react-bootstrap';
-import api from '../../../config/axios';
+import { useAppDispatch } from '../../../app/store';
+import { fetchNewsList } from '../../../features/news/newsSlice';
+import {
+  getApiErrorStatus,
+  type ApiRejectedPayload,
+} from '../../../features/shared/apiError';
 
 interface NewsItem {
   newsId?: string | number;
@@ -14,6 +18,7 @@ interface NewsItem {
 }
 
 function News() {
+  const dispatch = useAppDispatch();
   const [data, setData] = useState<NewsItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -24,25 +29,15 @@ function News() {
     setErrorMessage(null);
 
     try {
-      const response = await api.get('News/list');
-      const payload = response.data;
-
-      if (!Array.isArray(payload)) {
-        setData([]);
-        setErrorMessage('Không thể tải tin tức. Vui lòng thử lại sau.');
-        setIsLoading(false);
-        return;
-      }
-
+      const payload = await dispatch(fetchNewsList()).unwrap();
       setData(payload);
       setIsLoading(false);
     } catch (error) {
       console.error(error);
 
       const isKnownNoNews404 =
-        axios.isAxiosError(error) &&
-        error.response?.status === 404 &&
-        (error.response?.data as { error?: string } | undefined)?.error ===
+        getApiErrorStatus(error) === 404 &&
+        (error as ApiRejectedPayload | null)?.error ===
           'Không tìm thấy tin tức!';
 
       if (isKnownNoNews404) {
@@ -55,7 +50,7 @@ function News() {
 
       setIsLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     void getAllNews();

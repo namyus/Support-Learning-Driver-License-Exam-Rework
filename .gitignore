@@ -67,3 +67,6 @@ Thumbs.db
 
 # Local test accounts - never commit credentials
 Frontend/Account-tesing.txt
+
+# Local refactor progress notes - do not track in GitHub
+/Frontend/REFACTOR_PROGRESS.md

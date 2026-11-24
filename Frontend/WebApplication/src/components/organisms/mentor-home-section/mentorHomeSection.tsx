@@ -11,10 +11,15 @@ import {
   BsPersonBadgeFill,
   BsTelephoneFill,
 } from 'react-icons/bs';
-import api from '../../../config/axios';
 import { useAppDispatch } from '../../../app/store';
+import {
+  fetchClassesByMentorId,
+  fetchMentorTeachingSchedule,
+} from '../../../features/classes/classesSlice';
 import { fetchCourseList } from '../../../features/courses/coursesSlice';
 import type { CourseRecord } from '../../../features/courses/coursesTypes';
+import { fetchMentorByUserId } from '../../../features/mentors/mentorsSlice';
+import { getApiErrorStatus } from '../../../features/shared/apiError';
 import './mentor-home-section.scss';
 
 interface MentorSessionUser {
@@ -132,9 +137,11 @@ function HomePage() {
 
     if (user?.userID != null) {
       try {
-        const mentorRes = await api.get('Mentor/user/' + user.userID);
-        if (mentorRes.data) {
-          resolvedMentor = mentorRes.data as MentorProfileRecord;
+        const mentorData = await dispatch(
+          fetchMentorByUserId(user.userID)
+        ).unwrap();
+        if (mentorData) {
+          resolvedMentor = mentorData as MentorProfileRecord;
           setMentor(resolvedMentor);
           sessionStorage.setItem('loginedMentor', JSON.stringify(resolvedMentor));
         }
@@ -160,9 +167,11 @@ function HomePage() {
       let loadedClasses: MentorClassRecord[] = [];
 
       try {
-        const classRes = await api.get(`/Class/${mentorId}`);
-        loadedClasses = Array.isArray(classRes.data)
-          ? (classRes.data as MentorClassRecord[])
+        const classData = await dispatch(
+          fetchClassesByMentorId(mentorId)
+        ).unwrap();
+        loadedClasses = Array.isArray(classData)
+          ? (classData as MentorClassRecord[])
           : [];
         setClasses(loadedClasses);
       } catch {
@@ -172,19 +181,15 @@ function HomePage() {
 
       if (loadedClasses.length > 0) {
         try {
-          const scheduleRes = await api.get(
-            `Lesson/teaching-schedule/${mentorId}`,
-            {
-              params: {
-                startDate: weekRange.startIso,
-                endDate: weekRange.endIso,
-              },
-            }
-          );
-          const rawLessons: TeachingLessonRecord[] = Array.isArray(
-            scheduleRes.data
-          )
-            ? scheduleRes.data
+          const scheduleData = await dispatch(
+            fetchMentorTeachingSchedule({
+              mentorId,
+              startDate: weekRange.startIso,
+              endDate: weekRange.endIso,
+            })
+          ).unwrap();
+          const rawLessons: TeachingLessonRecord[] = Array.isArray(scheduleData)
+            ? [...scheduleData]
             : [];
           rawLessons.sort(
             (a, b) =>
@@ -192,9 +197,7 @@ function HomePage() {
           );
           setWeekLessons(rawLessons);
         } catch (err) {
-          const status = (err as { response?: { status?: number } } | null)
-            ?.response?.status;
-          if (status === 404) {
+          if (getApiErrorStatus(err) === 404) {
             setWeekLessons([]);
           } else {
             setWeekLessons([]);

@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import './staff-update-news-form.scss';
-import api from '../../../config/axios';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
+import { useAppDispatch } from '../../../app/store';
+import { fetchNewsById, updateNews } from '../../../features/news/newsSlice';
+import type { ApiRejectedPayload } from '../../../features/shared/apiError';
 
 function UpdateNewsForm() {
+    const dispatch = useAppDispatch();
     const { newsId } = useParams();
     const [error, setError] = useState(null);
     const [inputData, setInputData] = useState({
@@ -28,26 +31,32 @@ function UpdateNewsForm() {
                 return;
             }
 
-            await api.put('News/update', inputData);
+            await dispatch(updateNews(inputData)).unwrap();
             toast.success('Cập nhật tin tức thành công');
             setError(null);
             navigate('/quan-ly-tin-tuc');
         } catch (err) {
-            if (err.response?.data?.error) {
-                setError(err.response.data.error);
+            const apiErr = (err as ApiRejectedPayload | null)?.error;
+            if (apiErr) {
+                setError(apiErr);
             }
         }
     }
 
     const getNewsById = useCallback(async () => {
+        if (!newsId) return;
         try {
-            const response = await api.get(`News/${newsId}`);
-            const res = response.data;
-            setInputData(res);
+            const res = await dispatch(fetchNewsById(newsId)).unwrap();
+            setInputData({
+                ...res,
+                title: res.title ?? '',
+                description: res.description ?? '',
+                content: res.content ?? '',
+            });
         } catch (err) {
             console.log(err);
         }
-    }, [newsId]);
+    }, [dispatch, newsId]);
 
     const handleSubmit = (event) => {
         event.preventDefault();

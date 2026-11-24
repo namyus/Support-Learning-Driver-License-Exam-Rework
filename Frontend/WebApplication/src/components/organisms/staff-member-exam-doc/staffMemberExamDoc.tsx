@@ -1,10 +1,11 @@
 import { Backdrop, CircularProgress } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import api from '../../../config/axios';
 import { useReactToPrint } from 'react-to-print';
 import './staff-member-exam-doc.scss';
 import { toast } from 'react-toastify';
+import { useAppDispatch } from '../../../app/store';
+import { fetchMemberById } from '../../../features/members/membersSlice';
 
 interface MemberExamDocRecord {
   fullName?: string | null;
@@ -25,21 +26,26 @@ interface MemberExamDocRecord {
 }
 
 function MemberDoc() {
+  const dispatch = useAppDispatch();
   const { memberId } = useParams();
   const [member, setMember] = useState<MemberExamDocRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const componentRef = useRef<HTMLDivElement | null>(null);
 
   const getMemberById = useCallback(async () => {
+    if (!memberId) {
+      setIsLoading(false);
+      return;
+    }
     try {
-      const response = await api.get(`Member?memberId=${memberId}`);
-      setMember(response.data);
+      const res = await dispatch(fetchMemberById(memberId)).unwrap();
+      setMember((res.member as MemberExamDocRecord | null) ?? null);
       setIsLoading(false);
     } catch (err) {
       console.log(err);
       setIsLoading(false);
     }
-  }, [memberId]);
+  }, [dispatch, memberId]);
 
   const formatDate = (dbDate?: string | null) => {
     if (!dbDate) return '';

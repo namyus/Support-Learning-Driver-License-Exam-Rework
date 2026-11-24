@@ -8,7 +8,8 @@ import {
   faUserCircle,
   faUserTie,
 } from "@fortawesome/free-solid-svg-icons";
-import api from '../../../config/axios';
+import { useAppDispatch } from '../../../app/store';
+import { fetchUsers } from '../../../features/members/membersSlice';
 
 interface StoredSessionUser {
   username?: string;
@@ -36,6 +37,7 @@ const getSessionUser = (): StoredSessionUser | null => {
 };
 
 const UserInformation: React.FC = () => {
+  const dispatch = useAppDispatch();
   const sessionUser = getSessionUser();
   const username = sessionUser?.username?.trim() ?? "";
   const roleId = sessionUser?.roleId ?? null;
@@ -60,10 +62,7 @@ const UserInformation: React.FC = () => {
     setIsNotFound(false);
 
     try {
-      const response = await api.get("Users");
-      const data: ApiUserRecord[] = Array.isArray(response.data)
-        ? response.data
-        : [];
+      const data = (await dispatch(fetchUsers()).unwrap()) as ApiUserRecord[];
 
       const matchingUser = data.find(
         (apiUser) => apiUser.username === username
@@ -86,7 +85,7 @@ const UserInformation: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [username, roleId]);
+  }, [dispatch, username, roleId]);
 
   useEffect(() => {
     void fetchUserData();

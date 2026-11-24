@@ -8,8 +8,16 @@ import {
   BsX,
 } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
-import api from '../../../config/axios';
-import { clearAuthenticatedUser, useAppDispatch } from '../../../app/store';
+import {
+  clearAuthenticatedUser,
+  useAppDispatch,
+  useAppSelector,
+} from '../../../app/store';
+import {
+  clearMentorState,
+  fetchMentorByUserId,
+  selectCurrentMentor,
+} from '../../../features/mentors/mentorsSlice';
 import IconButton from '../../atoms/icon-button/iconButton';
 import PortalBrand from '../../molecules/portal-brand/portalBrand';
 import SidebarNavItem from '../../molecules/sidebar-nav-item/sidebarNavItem';
@@ -37,7 +45,8 @@ function MentorSidebar({
     ? JSON.parse(sessionStorage.getItem('loginedUser')!)
     : null;
   const userID = user?.userID;
-  const [mentor, setMentor] = useState<MentorProfile | null>(() => {
+  const reduxMentor = useAppSelector(selectCurrentMentor);
+  const [cachedMentor, setCachedMentor] = useState<MentorProfile | null>(() => {
     try {
       const stored = sessionStorage.getItem('loginedMentor');
       return stored ? (JSON.parse(stored) as MentorProfile) : null;
@@ -45,6 +54,7 @@ function MentorSidebar({
       return null;
     }
   });
+  const mentor = reduxMentor ?? cachedMentor;
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
@@ -62,16 +72,18 @@ function MentorSidebar({
 
     const getMentorbyId = async () => {
       try {
-        const response = await api.get('Mentor/user/' + userID);
-        setMentor(response.data);
-        sessionStorage.setItem('loginedMentor', JSON.stringify(response.data));
+        const mentorData = await dispatch(fetchMentorByUserId(userID)).unwrap();
+        if (mentorData) {
+          setCachedMentor(mentorData as MentorProfile);
+          sessionStorage.setItem('loginedMentor', JSON.stringify(mentorData));
+        }
       } catch (error) {
         console.log(error);
       }
     };
 
     void getMentorbyId();
-  }, [userID]);
+  }, [dispatch, userID]);
 
   const handleScroll = () => {
     window.scroll({
@@ -84,6 +96,7 @@ function MentorSidebar({
     sessionStorage.removeItem('loginedUser');
     sessionStorage.removeItem('loginedMentor');
     dispatch(clearAuthenticatedUser());
+    dispatch(clearMentorState());
     navigate('/');
     location.reload();
     handleScroll();

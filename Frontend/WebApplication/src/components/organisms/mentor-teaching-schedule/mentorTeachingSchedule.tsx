@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../../config/axios';
+import { useAppDispatch } from '../../../app/store';
+import {
+  fetchClassesByMentorId,
+  fetchMentorTeachingSchedule,
+} from '../../../features/classes/classesSlice';
+import { fetchMentorByUserId } from '../../../features/mentors/mentorsSlice';
+import { getApiErrorStatus } from '../../../features/shared/apiError';
 import './mentor-teaching-schedule.scss';
 
 const formatDate = (date: Date) => {
@@ -31,6 +37,7 @@ interface ScheduleLessonItem {
 }
 
 function TeachingSchedule() {
+  const dispatch = useAppDispatch();
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
   const [selectedWeek, setSelectedWeek] = useState(1);
   const [dateOptions, setDateOptions] = useState<DateOptionItem[]>([]);
@@ -56,9 +63,12 @@ function TeachingSchedule() {
         const rawUser = sessionStorage.getItem('loginedUser');
         const parsedUser = rawUser ? JSON.parse(rawUser) : null;
         if (parsedUser?.userID != null) {
-          const mentorRes = await api.get('Mentor/user/' + parsedUser.userID);
-          activeMentor = mentorRes.data;
-          sessionStorage.setItem('loginedMentor', JSON.stringify(activeMentor));
+          activeMentor = await dispatch(
+            fetchMentorByUserId(parsedUser.userID)
+          ).unwrap();
+          if (activeMentor) {
+            sessionStorage.setItem('loginedMentor', JSON.stringify(activeMentor));
+          }
         }
       }
 
@@ -68,13 +78,15 @@ function TeachingSchedule() {
         return;
       }
 
-      const response = await api.get(`/Class/${activeMentor.mentorId}`);
-      setMentorClass(Array.isArray(response.data) ? response.data : []);
+      const classData = await dispatch(
+        fetchClassesByMentorId(activeMentor.mentorId)
+      ).unwrap();
+      setMentorClass(Array.isArray(classData) ? classData : []);
     } catch (error) {
       console.error('Error fetching mentor class:', error);
       setLoadError('Không thể tải danh sách lớp phụ trách.');
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     void getClassByMentorID();
@@ -251,25 +263,21 @@ function TeachingSchedule() {
       setIsLoading(true);
       setLoadError(null);
 
-      const response = await api.get(
-        `Lesson/teaching-schedule/${currentMentor.mentorId}`,
-        {
-          params: {
-            startDate: weekStartDate.toISOString().split('T')[0],
-            endDate: weekEndDate.toISOString().split('T')[0],
-          },
-        }
-      );
+      const scheduleRes = await dispatch(
+        fetchMentorTeachingSchedule({
+          mentorId: currentMentor.mentorId,
+          startDate: weekStartDate.toISOString().split('T')[0],
+          endDate: weekEndDate.toISOString().split('T')[0],
+        })
+      ).unwrap();
 
-      if (response.status === 200) {
-        setScheduleData(Array.isArray(response.data) ? response.data : []);
-      } else {
-        setScheduleData([]);
-      }
+      setScheduleData(
+        Array.isArray(scheduleRes)
+          ? (scheduleRes as ScheduleLessonItem[])
+          : []
+      );
     } catch (error) {
-      const status = (error as { response?: { status?: number } } | null)
-        ?.response?.status;
-      if (status === 404) {
+      if (getApiErrorStatus(error) === 404) {
         setScheduleData([]);
         setLoadError(null);
       } else {
@@ -280,7 +288,7 @@ function TeachingSchedule() {
     } finally {
       setIsLoading(false);
     }
-  }, [mentorClass, weekStartDate, weekEndDate]);
+  }, [dispatch, mentorClass, weekStartDate, weekEndDate]);
 
   useEffect(() => {
     void fetchScheduleData();

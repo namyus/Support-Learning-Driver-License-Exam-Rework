@@ -1,11 +1,14 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './staff-mentor-table.scss'
-import api from '../../../config/axios';
-
-interface MentorRecord { mentorId: number | string; fullName: string; phone?: string; email?: string; isTeachingTheory: boolean; isTeachingPractice: boolean }
+import { useAppDispatch, useAppSelector } from '../../../app/store';
+import {
+  fetchMentors,
+  selectMentorsList,
+} from '../../../features/mentors/mentorsSlice';
 
 function MentorTable() {
-  const [mentor, setMentor] = useState<MentorRecord[]>([])
+  const dispatch = useAppDispatch();
+  const mentor = useAppSelector(selectMentorsList);
   const [searchQuery, setSearchQuery] = useState('');
   const [teachingFilter, setTeachingFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -14,14 +17,13 @@ function MentorTable() {
   useEffect(() => {
     const getAllMentors = async () => {
       try {
-        const response = await api.get('Mentor/list');
-        setMentor(Array.isArray(response.data) ? response.data : []);
+        await dispatch(fetchMentors()).unwrap();
       } catch (error) {
         console.log(error);
       }
     };
     void getAllMentors();
-  }, [])
+  }, [dispatch])
 
   const theoryCount = mentor.filter((item) => item.isTeachingTheory).length;
   const practiceCount = mentor.filter((item) => item.isTeachingPractice).length;

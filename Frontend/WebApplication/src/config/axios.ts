@@ -26,9 +26,4 @@ const config: AxiosRequestConfig = {
 
 const api = axios.create(config);
 
-axios.interceptors.request.use(function (requestConfig) {
-  // Do something before request is sent
-  return requestConfig;
-}, null);
-
 export default api;

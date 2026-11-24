@@ -1,24 +1,30 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import './staff-member-table.scss'
-import api from '../../../config/axios';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/esm/Button';
 import VNnum2words from 'vn-num2words';
-import { useAppDispatch } from '../../../app/store';
+import { useAppDispatch, useAppSelector } from '../../../app/store';
 import { fetchCourseById } from '../../../features/courses/coursesSlice';
+import { createInvoice } from '../../../features/invoices/invoicesSlice';
+import {
+  fetchMemberById,
+  fetchMembers,
+  selectMembersList,
+} from '../../../features/members/membersSlice';
+import type { ApiRejectedPayload } from '../../../features/shared/apiError';
+import { fetchStaffByUserId } from '../../../features/staff/staffSlice';
 
-interface MemberRecord { memberID: number | string; fullName: string; phone?: string; email?: string; courseId: string; isPaid: boolean }
 interface StaffRecord { staffId: number; fullName: string }
 interface MemberDetails { memberID: number | string; fullName: string }
 interface CourseDetails { courseId: string; courseFee: number }
 
 function MemberTable() {
   const dispatch = useAppDispatch();
+  const member = useAppSelector(selectMembersList);
   const user = JSON.parse(sessionStorage.getItem('loginedUser') || '{}') as { userID: number };
   const [staff, setStaff] = useState<StaffRecord | null>(null);
-  const [member, setMember] = useState<MemberRecord[]>([]);
   const [searchValue, setSearchValue] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -49,8 +55,8 @@ function MemberTable() {
 
   const getSpecificInformation = useCallback(async (memberID: number | string, courseId: string) => {
     try {
-      const response1 = await api.get('Member?memberId=' + memberID);
-      setSpecificMember(response1.data);
+      const memberRes = await dispatch(fetchMemberById(memberID)).unwrap();
+      setSpecificMember(memberRes.member as MemberDetails | null);
       const courseData = await dispatch(fetchCourseById(courseId)).unwrap();
       setSpecificCourse(courseData as CourseDetails);
       setSpecificInfoLoaded(true);
@@ -61,31 +67,32 @@ function MemberTable() {
 
   const getStaffByUID = useCallback(async () => {
     try {
-      const response = await api.get('Staff/user/' + user.userID);
-      setStaff(response.data);
+      const staffData = await dispatch(fetchStaffByUserId(user.userID)).unwrap();
+      setStaff(staffData as StaffRecord | null);
     } catch (err) {
       console.log(err);
     }
-  }, [user.userID]);
+  }, [dispatch, user.userID]);
 
   const getAllMembers = useCallback(async () => {
-    const response = await api.get('/Members');
-    setMember(Array.isArray(response.data) ? response.data : []);
-  }, []);
+    try {
+      await dispatch(fetchMembers()).unwrap();
+    } catch (err) {
+      console.log(err);
+    }
+  }, [dispatch]);
 
   const updateMemberIsPaidAndFetchData = async () => {
     if (isSubmittingPayment) return;
     setIsSubmittingPayment(true);
     try {
-      await api.post('Invoice/create', inputData);
+      await dispatch(createInvoice(inputData)).unwrap();
       const notificationMessage = 'Cập nhật thanh toán thành công!';
       localStorage.setItem('notificationMessage', notificationMessage);
       location.reload();
     } catch (err: unknown) {
       console.error('Error confirming payment:', err);
-      const backendMessage = (
-        err as { response?: { data?: { error?: unknown } } } | null
-      )?.response?.data?.error;
+      const backendMessage = (err as ApiRejectedPayload | null)?.error;
       const errorMessage =
         typeof backendMessage === 'string' && backendMessage.trim().length > 0
           ? backendMessage
@@ -178,8 +185,8 @@ function MemberTable() {
                 <td><span className="staff-id-badge">#{record.memberID}</span></td><td className="cell-strong">{record.fullName}</td><td className="cell-mono">{record.phone}</td><td>{record.email}</td><td className="col-center"><span className="staff-course-tag">{record.courseId}</span></td>
                 <td className="col-center"><span className={`status-badge ${record.isPaid ? 'status-badge--active' : 'status-badge--inactive'}`}>{record.isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'}</span></td>
                 <td className="col-actions"><div className="row-actions">
-                  <button className="action-btn action-btn--edit" type="button" disabled={record.isPaid} onClick={() => { setSpecificInfoLoaded(false); getSpecificInformation(record.memberID, record.courseId); handleShow(); }}>Thanh toán</button>
-                  <button className="action-btn action-btn--view" type="button" onClick={() => handleApplication(record.memberID)}>Đơn thi</button>
+                  <button className="action-btn action-btn--edit" type="button" disabled={Boolean(record.isPaid)} onClick={() => { if (record.memberID == null || !record.courseId) return; setSpecificInfoLoaded(false); getSpecificInformation(record.memberID, record.courseId); handleShow(); }}>Thanh toán</button>
+                  <button className="action-btn action-btn--view" type="button" onClick={() => { if (record.memberID != null) handleApplication(record.memberID); }}>Đơn thi</button>
                 </div></td>
               </tr>
             )) : <tr><td colSpan={7}><div className="staff-table-state">{member.length ? 'Không tìm thấy thành viên phù hợp với bộ lọc hiện tại.' : 'Hiện chưa có dữ liệu thành viên.'}</div></td></tr>}</tbody>

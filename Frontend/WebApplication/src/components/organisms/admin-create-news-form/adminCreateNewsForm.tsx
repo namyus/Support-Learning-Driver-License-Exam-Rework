@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import './admin-create-news-form.scss';
-import api from '../../../config/axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { useAppDispatch } from '../../../app/store';
+import { createNews, fetchNewsList } from '../../../features/news/newsSlice';
+import type { ApiRejectedPayload } from '../../../features/shared/apiError';
+import { fetchStaffByUserId } from '../../../features/staff/staffSlice';
 
 function CreateNewsForm() {
+    const dispatch = useAppDispatch();
     const user = sessionStorage.getItem('loginedUser') ? JSON.parse(sessionStorage.getItem('loginedUser')) : null;
     const userID = Number(user.userID);
 
@@ -20,17 +24,16 @@ function CreateNewsForm() {
 
     const getStaffByUserID = useCallback(async () => {
         try {
-            const response = await api.get('Staff/user/' + userID);
-            setStaff(response.data);
+            const staffData = await dispatch(fetchStaffByUserId(userID)).unwrap();
+            setStaff(staffData);
         } catch (err) {
             console.log(err);
         }
-    }, [userID]);
+    }, [dispatch, userID]);
 
     const getAllNews = useCallback(async () => {
         try {
-            const response = await api.get('News/list');
-            const res = response.data;
+            const res = await dispatch(fetchNewsList()).unwrap();
 
             setInputData((prevInputData) => ({
                 ...prevInputData,
@@ -40,7 +43,7 @@ function CreateNewsForm() {
         } catch (err) {
             console.log(err);
         }
-    }, []);
+    }, [dispatch]);
 
     useEffect(() => {
         getAllNews();
@@ -68,14 +71,15 @@ function CreateNewsForm() {
                 return;
             }
 
-            await api.post('News/add', inputData);
+            await dispatch(createNews(inputData)).unwrap();
             console.log(inputData);
             toast.success('Tạo tin tức thành công');
             setError(null);
             navigate('/quan-ly-tin-tuc');
         } catch (err) {
-            if (err.response?.data?.error) {
-                setError(err.response.data.error);
+            const apiErr = (err as ApiRejectedPayload | null)?.error;
+            if (apiErr) {
+                setError(apiErr);
             }
         }
     }

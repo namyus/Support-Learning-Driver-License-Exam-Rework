@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
 import './admin-create-class-form.scss';
-import api from '../../../config/axios';
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
@@ -14,9 +13,17 @@ import {
 } from "react-icons/bs";
 import { useAppDispatch } from "../../../app/store";
 import {
+  addCurriculum,
+  createPracticeLesson,
+  createTheoryLesson,
+  fetchClassDates,
+  fetchCurriculumList,
+} from "../../../features/classes/classesSlice";
+import {
   fetchCourseDetailsByCourseId,
   fetchCourseList,
 } from "../../../features/courses/coursesSlice";
+import type { ApiRejectedPayload } from "../../../features/shared/apiError";
 
 interface CourseDetailPeriod {
   courseDetailsId?: number | string;
@@ -48,15 +55,19 @@ function getStoredValue(key: string): string {
 }
 
 function getApiErrorMessage(err: unknown, fallback: string): string {
-  if (
-    typeof err === "object" &&
-    err !== null &&
-    "response" in err &&
-    typeof (err as { response?: { data?: { error?: string } } }).response?.data
-      ?.error === "string"
-  ) {
-    return (err as { response: { data: { error: string } } }).response.data
-      .error;
+  if (typeof err === "object" && err !== null) {
+    const apiErr = err as ApiRejectedPayload;
+    if (typeof apiErr.error === "string" && apiErr.error.trim()) {
+      return apiErr.error;
+    }
+    if (
+      "response" in err &&
+      typeof (err as { response?: { data?: { error?: string } } }).response
+        ?.data?.error === "string"
+    ) {
+      return (err as { response: { data: { error: string } } }).response.data
+        .error;
+    }
   }
   return fallback;
 }
@@ -105,15 +116,12 @@ function CreateTheoryLesson() {
 
   const getCurriculum = useCallback(async () => {
     try {
-      const response = await api.get("Curriculum/list");
-      const res: CurriculumItem[] = Array.isArray(response.data)
-        ? response.data
-        : [];
-      setCurriculum(res);
+      const res = await dispatch(fetchCurriculumList()).unwrap();
+      setCurriculum(Array.isArray(res) ? res : []);
     } catch (err) {
       console.error(err);
     }
-  }, []);
+  }, [dispatch]);
 
   const getFirstCourseDetails = useCallback(async () => {
     if (!courseId) return;
@@ -145,7 +153,7 @@ function CreateTheoryLesson() {
       return;
     }
     try {
-      await api.post("Curriculum/add", curriculumInput);
+      await dispatch(addCurriculum(curriculumInput)).unwrap();
       handleClose();
       setCurriculumInput({ content: "", isTheory: true });
       toast.success("Thêm nội dung thành công");
@@ -172,10 +180,9 @@ function CreateTheoryLesson() {
     event.preventDefault();
     setError(null);
     try {
-      await api.post(
-        "Lesson/createTheoryLesson?courseId=" + courseId,
-        inputData
-      );
+      await dispatch(
+        createTheoryLesson({ courseId, lessons: inputData })
+      ).unwrap();
       navigate("/quan-ly-lich-hoc/lop-ly-thuyet");
       toast.success("Tạo lịch học lý thuyết thành công!");
     } catch (err) {
@@ -468,13 +475,12 @@ export function CreatePracticeLesson() {
   const getDateByClass = useCallback(async () => {
     if (!classId) return;
     try {
-      const response = await api.get("Class/" + classId + "/dates");
-      const res: string[] = Array.isArray(response.data) ? response.data : [];
-      setDateByClassList(res);
+      const res = await dispatch(fetchClassDates(classId)).unwrap();
+      setDateByClassList(Array.isArray(res) ? res : []);
     } catch (err) {
       console.error(err);
     }
-  }, [classId]);
+  }, [classId, dispatch]);
 
   const getCourseDetails = useCallback(async () => {
     if (!courseId) return;
@@ -505,10 +511,9 @@ export function CreatePracticeLesson() {
     event.preventDefault();
     setError(null);
     try {
-      await api.post(
-        "Lesson/createPracticeLesson?classId=" + classId,
-        inputData
-      );
+      await dispatch(
+        createPracticeLesson({ classId, lessons: inputData })
+      ).unwrap();
       toast.success("Tạo lịch học thực hành thành công!");
       navigate("/quan-ly-lich-hoc/lop-thuc-hanh");
     } catch (err) {

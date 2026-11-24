@@ -1,27 +1,11 @@
 
 import { useEffect, useState } from 'react';
 import './member-exam-document.scss';
-import api from '../../../config/axios';
-
-interface MemberData {
-  userID?: number | string;
-  fullName?: string | null;
-  nationality?: string | null;
-  dob?: string | null;
-  gender?: string | null;
-  residenceAddress?: string | null;
-  temporaryAddress?: string | null;
-  identityCardNumber?: string | null;
-  cardProvidedDate?: string | null;
-  cardProvidedLocation?: string | null;
-  drivingLicenseNumber?: string | null;
-  drivingLicenseTier?: string | null;
-  drivingLicenseProvider?: string | null;
-  drivingLicenseProvidedDate?: string | null;
-  drivingTestTier?: string | null;
-  integratedDrivingLicense?: boolean;
-  revokedDrivingLicense?: boolean;
-}
+import { useAppDispatch, useAppSelector } from '../../../app/store';
+import {
+  fetchMemberByUserId,
+  selectCurrentMember,
+} from '../../../features/members/membersSlice';
 
 function formatDate(value?: string | null): string {
   if (!value) return '—';
@@ -44,7 +28,8 @@ function displayValue(value?: string | number | null): string | number {
 }
 
 function ExamDocument() {
-  const [member, setMember] = useState<MemberData | null>(null);
+  const dispatch = useAppDispatch();
+  const member = useAppSelector(selectCurrentMember);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,20 +53,17 @@ function ExamDocument() {
           throw new Error('Thông tin tài khoản không hợp lệ.');
         }
 
-        const response = await api.get(`Member/${user.userID}`);
+        const memberData = await dispatch(fetchMemberByUserId(user.userID)).unwrap();
 
         if (!isMounted) return;
 
-        if (!response.data) {
-          setMember(null);
+        if (!memberData) {
           return;
         }
 
-        setMember(response.data);
-
         sessionStorage.setItem(
           'loginedMember',
-          JSON.stringify(response.data)
+          JSON.stringify(memberData)
         );
       } catch (err) {
         console.error('Failed to load exam document:', err);
@@ -103,7 +85,7 @@ function ExamDocument() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [dispatch]);
 
   const gender = member?.gender
     ? member.gender.charAt(0).toUpperCase() + member.gender.slice(1)

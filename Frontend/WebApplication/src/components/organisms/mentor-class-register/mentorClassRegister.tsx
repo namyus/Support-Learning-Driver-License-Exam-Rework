@@ -1,16 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import './mentor-class-register.scss';
-import api from '../../../config/axios';
 import Button from 'react-bootstrap/esm/Button';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../../../app/store';
+import { fetchClassesByMentorId } from '../../../features/classes/classesSlice';
 import { fetchCourseList } from '../../../features/courses/coursesSlice';
 import type { CourseRecord } from '../../../features/courses/coursesTypes';
-
-interface MentorRecord {
-  mentorId?: number | string;
-  fullName?: string;
-}
+import { fetchMentorByUserId } from '../../../features/mentors/mentorsSlice';
+import type { MentorRecord } from '../../../features/mentors/mentorsTypes';
 
 interface MentorClassScheduleItem {
   classId?: number | string;
@@ -40,12 +37,12 @@ function MentorClassRegister() {
   const getMentorByID = useCallback(async () => {
     try {
       if (userId == null) return;
-      const response = await api.get('Mentor/user/' + userId);
-      setMentor(response.data);
+      const mentorData = await dispatch(fetchMentorByUserId(userId)).unwrap();
+      setMentor(mentorData);
     } catch (err) {
-      console.error((err as Error).message);
+      console.error((err as { message?: string })?.message);
     }
-  }, [userId]);
+  }, [dispatch, userId]);
 
   const getCourseByID = useCallback(async () => {
     setIsLoading(true);
@@ -65,12 +62,12 @@ function MentorClassRegister() {
   const getTeachingSchedule = useCallback(async () => {
     try {
       if (!mentorId) return;
-      const response = await api.get('Class/' + mentorId);
-      setTeachingSchedule(Array.isArray(response.data) ? response.data : []);
+      const res = await dispatch(fetchClassesByMentorId(mentorId)).unwrap();
+      setTeachingSchedule(Array.isArray(res) ? res : []);
     } catch (err) {
-      console.error((err as Error).message);
+      console.error((err as { message?: string })?.message);
     }
-  }, [mentorId]);
+  }, [dispatch, mentorId]);
 
   const formatDate = (dbDate?: string) => {
     if (!dbDate) return '—';

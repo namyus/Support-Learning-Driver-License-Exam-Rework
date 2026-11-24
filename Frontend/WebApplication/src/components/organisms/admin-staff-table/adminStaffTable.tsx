@@ -1,23 +1,22 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './admin-staff-table.scss';
 import { useNavigate } from 'react-router-dom';
-import api from '../../../config/axios';
 import { toast } from 'react-toastify';
-
-interface StaffRecord {
-  staffId: number;
-  userId?: number;
-  fullName: string;
-  email: string;
-  phone: string;
-  status: boolean;
-}
+import { useAppDispatch, useAppSelector } from '../../../app/store';
+import {
+  deleteStaff,
+  fetchStaffList,
+  selectStaffList,
+} from '../../../features/staff/staffSlice';
+import type { StaffRecord } from '../../../features/staff/staffTypes';
+import type { ApiRejectedPayload } from '../../../features/shared/apiError';
 
 function StaffTable() {
-  const [data, setData] = useState<StaffRecord[]>([]);
+  const dispatch = useAppDispatch();
+  const data = useAppSelector(selectStaffList);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [deletingStaffId, setDeletingStaffId] = useState<number | null>(null);
+  const [deletingStaffId, setDeletingStaffId] = useState<number | string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -30,16 +29,14 @@ function StaffTable() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const response = await api.get('Staff/list');
-      const res: StaffRecord[] = Array.isArray(response.data) ? response.data : [];
-      setData(res);
+      await dispatch(fetchStaffList()).unwrap();
     } catch (err) {
       console.error(err);
       setErrorMessage('Không thể tải danh sách nhân viên. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     void getAllStaff();
@@ -74,7 +71,8 @@ function StaffTable() {
     navigate('tao-nhan-vien');
   };
 
-  const handleUpdate = (staffId: number) => {
+  const handleUpdate = (staffId: number | string | undefined) => {
+    if (staffId == null) return;
     window.scrollTo(0, 0);
     navigate(`cap-nhat-nhan-vien/${staffId}`, { state: { staffId } });
   };
@@ -84,6 +82,7 @@ function StaffTable() {
     staff: StaffRecord
   ) => {
     e.stopPropagation();
+    if (staff.staffId == null) return;
     const confirmed = window.confirm(
       `Bạn có chắc chắn muốn xoá nhân viên "${staff.fullName}" (Mã NV: ${staff.staffId}) không?`
     );
@@ -91,14 +90,14 @@ function StaffTable() {
 
     try {
       setDeletingStaffId(staff.staffId);
-      await api.delete('Staff/delete/' + staff.staffId);
+      await dispatch(deleteStaff(staff.staffId)).unwrap();
       toast.success('Xoá nhân viên thành công!');
       await getAllStaff();
     } catch (err: unknown) {
       console.error(err);
-      const axiosErr = err as { response?: { data?: { error?: string } } };
+      const rejected = err as ApiRejectedPayload | undefined;
       toast.error(
-        axiosErr.response?.data?.error || 'Không thể xoá nhân viên. Vui lòng thử lại.'
+        rejected?.error || 'Không thể xoá nhân viên. Vui lòng thử lại.'
       );
     } finally {
       setDeletingStaffId(null);

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import { isAxiosError } from 'axios';
 import { Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -10,24 +9,18 @@ import {
   AiOutlineFileText,
   AiOutlineWarning,
 } from 'react-icons/ai';
-import api from '../../../config/axios';
+import { useAppDispatch } from '../../../app/store';
+import { fetchTestByStudentId } from '../../../features/exams/examsSlice';
+import { fetchMemberByUserId } from '../../../features/members/membersSlice';
+import type { MemberRecord } from '../../../features/members/membersTypes';
+import { fetchStudentByMemberId } from '../../../features/students/studentsSlice';
+import type { StudentRecord } from '../../../features/students/studentsTypes';
+import { getApiErrorStatus } from '../../../features/shared/apiError';
 import './member-theory-test-content.scss';
 
 interface LoginedUser {
   userID?: number;
   userId?: number;
-}
-
-interface MemberRecord {
-  memberID: number;
-  courseId?: string | null;
-  fullName?: string | null;
-}
-
-interface StudentRecord {
-  studentId: string;
-  courseId?: string | null;
-  isPaid?: boolean | null;
 }
 
 interface TheoryTestRecord {
@@ -50,6 +43,7 @@ function readSessionJson<T>(key: string): T | null {
 }
 
 function TheoryTestContent() {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const [member, setMember] = useState<MemberRecord | null>(null);
@@ -77,13 +71,12 @@ function TheoryTestContent() {
     try {
       let memberData: MemberRecord | null = null;
       try {
-        const memberResponse = await api.get<MemberRecord>(`Member/${userId}`);
-        memberData = memberResponse.data ?? null;
+        memberData = await dispatch(fetchMemberByUserId(userId)).unwrap();
         if (memberData) {
           sessionStorage.setItem('loginedMember', JSON.stringify(memberData));
         }
       } catch (err) {
-        if (isAxiosError(err) && err.response?.status === 404) {
+        if (getApiErrorStatus(err) === 404) {
           setMember(null);
           setStudent(null);
           setTheoryTest(null);
@@ -104,10 +97,12 @@ function TheoryTestContent() {
 
       let studentData: StudentRecord | null = null;
       try {
-        const studentResponse = await api.get<StudentRecord>(`Student/${memberData.memberID}`);
-        studentData = studentResponse.data ?? null;
+        const studentResponse = await dispatch(
+          fetchStudentByMemberId(memberData.memberID)
+        ).unwrap();
+        studentData = studentResponse.student;
       } catch (err) {
-        if (isAxiosError(err) && err.response?.status === 404) {
+        if (getApiErrorStatus(err) === 404) {
           setStudent(null);
           setTheoryTest(null);
           setIsLoading(false);
@@ -125,12 +120,12 @@ function TheoryTestContent() {
       }
 
       try {
-        const testResponse = await api.get<TheoryTestRecord>(
-          `TestByStudentId?studentId=${encodeURIComponent(studentData.studentId)}`
-        );
-        setTheoryTest(testResponse.data ?? null);
+        const testData = await dispatch(
+          fetchTestByStudentId(studentData.studentId)
+        ).unwrap();
+        setTheoryTest(testData ?? null);
       } catch (err) {
-        if (isAxiosError(err) && err.response?.status === 404) {
+        if (getApiErrorStatus(err) === 404) {
           setTheoryTest(null);
           setIsLoading(false);
           return;
@@ -143,7 +138,7 @@ function TheoryTestContent() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     void loadExamEntryData();

@@ -3,8 +3,21 @@ import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { Link as ScrollLink, scroller } from 'react-scroll';
 import { toast } from 'react-toastify';
 import MemberImg from '../../../../assets/imgs/member/member_img.png';
-import api from '../../../config/axios';
-import { clearAuthenticatedUser, useAppDispatch } from '../../../app/store';
+import {
+  clearAuthenticatedUser,
+  useAppDispatch,
+  useAppSelector,
+} from '../../../app/store';
+import {
+  clearMemberState,
+  fetchMemberByUserId,
+  selectCurrentMember,
+} from '../../../features/members/membersSlice';
+import type { MemberRecord } from '../../../features/members/membersTypes';
+import {
+  clearStudentState,
+  fetchStudentByMemberId,
+} from '../../../features/students/studentsSlice';
 import BrandLogo from '../../atoms/brand-logo/brandLogo';
 import UserAvatar from '../../atoms/user-avatar/userAvatar';
 import './member-header.scss';
@@ -12,14 +25,6 @@ import './member-header.scss';
 interface LoginUser {
   userID?: number | string;
   username?: string;
-}
-
-interface MemberRecord {
-  memberID?: number | string;
-}
-
-interface StudentRecord {
-  pass?: boolean | null;
 }
 
 function readSessionValue<T>(key: string): T | null {
@@ -54,11 +59,12 @@ function MemberHeader() {
   const userID = user?.userID;
   const username = user?.username ?? '';
 
-  const [member, setMember] = useState<MemberRecord | null>(() =>
+  const reduxMember = useAppSelector(selectCurrentMember);
+  const [cachedMember, setCachedMember] = useState<MemberRecord | null>(() =>
     readSessionValue<MemberRecord>('loginedMember')
   );
-  const [, setStudent] = useState<StudentRecord | null>(null);
-  const [, setIsPass] = useState(false);
+  const member = reduxMember ?? cachedMember;
+  const memberID = member?.memberID;
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -95,12 +101,14 @@ function MemberHeader() {
 
     const getMemberByID = async () => {
       try {
-        const response = await api.get<MemberRecord>(`Member/${userID}`);
+        const memberData = await dispatch(fetchMemberByUserId(userID)).unwrap();
         if (!isMounted) {
           return;
         }
-        setMember(response.data);
-        sessionStorage.setItem('loginedMember', JSON.stringify(response.data));
+        setCachedMember(memberData);
+        if (memberData) {
+          sessionStorage.setItem('loginedMember', JSON.stringify(memberData));
+        }
       } catch (error) {
         console.log(error);
       }
@@ -111,7 +119,7 @@ function MemberHeader() {
     return () => {
       isMounted = false;
     };
-  }, [userID]);
+  }, [dispatch, userID]);
 
   useEffect(() => {
     const notify = localStorage.getItem('loginSuccessNotify');
@@ -122,27 +130,20 @@ function MemberHeader() {
   }, []);
 
   useEffect(() => {
-    if (!member?.memberID) {
+    if (!memberID) {
       return;
     }
 
     const getStudentById = async () => {
       try {
-        const response = await api.get<StudentRecord>(
-          'Student/' + member.memberID
-        );
-        const res = response.data;
-        setStudent(res);
-        if (res?.pass !== null && res?.pass === true) {
-          setIsPass(true);
-        }
+        await dispatch(fetchStudentByMemberId(memberID)).unwrap();
       } catch (err) {
         console.log(err);
       }
     };
 
     void getStudentById();
-  }, [member]);
+  }, [dispatch, memberID]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -232,6 +233,8 @@ function MemberHeader() {
     sessionStorage.removeItem('loginedUser');
     sessionStorage.removeItem('loginedMember');
     dispatch(clearAuthenticatedUser());
+    dispatch(clearMemberState());
+    dispatch(clearStudentState());
     navigate('/');
     window.location.reload();
     handleScroll();

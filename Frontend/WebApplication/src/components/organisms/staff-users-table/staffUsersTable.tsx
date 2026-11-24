@@ -1,18 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import './staff-users-table.scss';
-import api from '../../../config/axios';
-
-interface UserRecord {
-  userID: number | string;
-  fullName?: string | null;
-  phone?: string | null;
-  email?: string | null;
-  status: boolean;
-  roleId: number | string;
-}
+import { useAppDispatch, useAppSelector } from '../../../app/store';
+import {
+  fetchUsers,
+  selectUsersList,
+} from '../../../features/members/membersSlice';
 
 function UserTable() {
-  const [data, setData] = useState<UserRecord[]>([]);
+  const dispatch = useAppDispatch();
+  const data = useAppSelector(selectUsersList);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -22,14 +18,13 @@ function UserTable() {
   useEffect(() => {
     const getAllUser = async () => {
       try {
-        const response = await api.get('/Users');
-        setData(Array.isArray(response.data) ? response.data : []);
+        await dispatch(fetchUsers()).unwrap();
       } catch (error) {
         console.error(error);
       }
     };
     void getAllUser();
-  }, []);
+  }, [dispatch]);
 
   const activeCount = data.filter((user) => user.status === true).length;
   const inactiveCount = data.filter((user) => user.status === false).length;

@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../../config/axios';
 import './admin-create-staff-form.scss';
 import { toast } from 'react-toastify';
-
-interface CreateStaffPayload {
-  username: string;
-  password: string;
-  fullName: string;
-  email: string;
-  phone: string;
-}
+import { useAppDispatch } from '../../../app/store';
+import { createStaff as createStaffThunk } from '../../../features/staff/staffSlice';
+import type { CreateStaffPayload } from '../../../features/staff/staffTypes';
+import type { ApiRejectedPayload } from '../../../features/shared/apiError';
 
 function CreateStaffForm() {
+  const dispatch = useAppDispatch();
   const [inputData, setInputData] = useState<CreateStaffPayload>({
     username: '',
     password: '',
@@ -50,16 +46,14 @@ function CreateStaffForm() {
     try {
       setIsSubmitting(true);
       setError(null);
-      await api.post('Staff/add', inputData);
+      await dispatch(createStaffThunk(inputData)).unwrap();
       toast.success('Tạo nhân viên thành công!');
       navigate('/quan-ly-nhan-vien');
     } catch (err: unknown) {
-      const axiosErr = err as {
-        response?: { status?: number; data?: { error?: string } };
-      };
-      if (axiosErr.response?.data?.error) {
-        setError(axiosErr.response.data.error);
-      } else if (axiosErr.response?.status === 409) {
+      const rejected = err as ApiRejectedPayload | undefined;
+      if (rejected?.error) {
+        setError(rejected.error);
+      } else if (rejected?.status === 409) {
         setError('Tên đăng nhập hoặc email đã tồn tại.');
       } else {
         setError('Không thể tạo nhân viên. Vui lòng thử lại.');

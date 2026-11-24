@@ -1,39 +1,43 @@
-import { useEffect, useMemo, useState } from 'react';
-import api from '../../../config/axios';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import './admin-news-table.scss';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-
-interface NewsRecord {
-    newsId: number;
-    title: string;
-    description: string;
-    content: string;
-    status: boolean;
-    createdTime?: string;
-}
+import { useAppDispatch } from '../../../app/store';
+import {
+    deactivateNews,
+    fetchInactiveNews,
+    fetchNewsList,
+} from '../../../features/news/newsSlice';
+import type { NewsRecord } from '../../../features/news/newsTypes';
+import {
+    getApiErrorStatus,
+    type ApiRejectedPayload,
+} from '../../../features/shared/apiError';
 
 const isExpectedEmptyNewsResponse = (error: unknown) => {
-    const response = (error as { response?: { status?: number; data?: { error?: string } } } | null)?.response;
-    return response?.status === 404 && response.data?.error === 'Không tìm thấy tin tức!';
+    return (
+        getApiErrorStatus(error) === 404 &&
+        (error as ApiRejectedPayload | null)?.error === 'Không tìm thấy tin tức!'
+    );
 };
 
 function NewsTable() {
+    const dispatch = useAppDispatch();
     const [data, setData] = useState<NewsRecord[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [isLoading, setIsLoading] = useState(true);
     const [hasLoadError, setHasLoadError] = useState(false);
 
-    const getAllNews = async () => {
+    const getAllNews = useCallback(async () => {
         setIsLoading(true);
         try {
             const [activeResult, inactiveResult] = await Promise.allSettled([
-                api.get('News/list'),
-                api.get('News/inactive-news')
+                dispatch(fetchNewsList()).unwrap(),
+                dispatch(fetchInactiveNews()).unwrap(),
             ]);
-            const getRecords = (result: PromiseSettledResult<{ data: NewsRecord[] }>) => {
-                if (result.status === 'fulfilled') return result.value.data as NewsRecord[];
+            const getRecords = (result: PromiseSettledResult<NewsRecord[]>) => {
+                if (result.status === 'fulfilled') return result.value;
                 if (isExpectedEmptyNewsResponse(result.reason)) return [];
                 throw result.reason;
             };
@@ -47,7 +51,7 @@ function NewsTable() {
         } finally {
             setIsLoading(false);
         }
-    }
+    }, [dispatch]);
 
     const navigate = useNavigate();
 
@@ -73,8 +77,8 @@ function NewsTable() {
     const lastRecord = Math.min(overallIndex + recordPage, filteredData.length);
 
     useEffect(() => {
-        getAllNews();
-    }, []);
+        void getAllNews();
+    }, [getAllNews]);
 
     useEffect(() => {
         if (npage === 0 && currentPage !== 1) {
@@ -103,7 +107,7 @@ function NewsTable() {
     const handleDelete = async (newsId: number) => {
         try {
             // Perform the deletion
-            await api.delete('News/deactivate/' + newsId);
+            await dispatch(deactivateNews(newsId)).unwrap();
             toast.success("Xóa thành công!")
 
             await getAllNews();

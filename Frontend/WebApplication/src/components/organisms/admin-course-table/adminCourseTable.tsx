@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import api from '../../../config/axios';
 import './admin-course-table.scss';
 import { Link, useNavigate } from 'react-router-dom';
 import Modal from 'react-bootstrap/Modal';
@@ -14,12 +13,17 @@ import {
     BsPeople,
     BsCalendar3,
 } from 'react-icons/bs';
-import { useAppDispatch } from '../../../app/store';
+import { useAppDispatch, useAppSelector } from '../../../app/store';
 import {
     deactivateCourse,
     fetchCourseById,
     fetchCourseList,
 } from '../../../features/courses/coursesSlice';
+import {
+    fetchMembers,
+    selectMembersList,
+} from '../../../features/members/membersSlice';
+import type { MemberRecord } from '../../../features/members/membersTypes';
 
 interface CourseItem {
     courseId: string;
@@ -33,21 +37,15 @@ interface CourseItem {
     status: boolean;
 }
 
-interface MemberItem {
-    memberId?: string;
-    fullName?: string;
-    courseId?: string;
-}
-
 function CourseTable() {
     const dispatch = useAppDispatch();
+    const allMembers = useAppSelector(selectMembersList);
     const [data, setData] = useState<CourseItem[]>([]);
     const [searchValue, setSearchValue] = useState('');
     const [selectedMonth, setSelectedMonth] = useState('');
     const [courseMonthList, setCourseMonthList] = useState<number[]>([]);
-    const [mapRecord, setMapRecord] = useState<Map<string, MemberItem[]>>(new Map());
-    const [allMembers, setAllMembers] = useState<MemberItem[]>([]);
-    const [memberList, setMemberList] = useState<MemberItem[]>([]);
+    const [mapRecord, setMapRecord] = useState<Map<string, MemberRecord[]>>(new Map());
+    const [memberList, setMemberList] = useState<MemberRecord[]>([]);
     const [specificCourse, setSpecificCourse] = useState<CourseItem | null>(null);
     const [show, setShow] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -103,14 +101,12 @@ function CourseTable() {
 
     const getMember = useCallback(async () => {
         try {
-            const response = await api.get('/Members');
-            const res: MemberItem[] = Array.isArray(response.data) ? response.data : [];
-            setAllMembers(res);
+            const res = await dispatch(fetchMembers()).unwrap();
             setMemberList(res);
         } catch (err) {
             console.error(err);
         }
-    }, []);
+    }, [dispatch]);
 
     useEffect(() => {
         void getAllCourse();
@@ -119,7 +115,7 @@ function CourseTable() {
 
     // Fix BUG-ADM-07: Populate mapRecord whenever course data or allMembers updates
     useEffect(() => {
-        const nextMap = new Map<string, MemberItem[]>();
+        const nextMap = new Map<string, MemberRecord[]>();
         for (const course of data) {
             const enrolled = allMembers.filter(
                 (member) => String(member.courseId) === String(course.courseId)
@@ -189,12 +185,11 @@ function CourseTable() {
         setIsModalLoading(true);
         setSpecificCourse(null);
         try {
-            const [res1, response2] = await Promise.all([
+            const [res1, res2] = await Promise.all([
                 dispatch(fetchCourseById(courseId)).unwrap(),
-                api.get('Members'),
+                dispatch(fetchMembers()).unwrap(),
             ]);
             setSpecificCourse(res1 as CourseItem);
-            const res2: MemberItem[] = Array.isArray(response2.data) ? response2.data : [];
             const membersInCourse = res2.filter((member) => member.courseId === courseId);
             setMemberList(membersInCourse);
         } catch (err) {

@@ -1,28 +1,24 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './admin-mentor-table.scss';
 import { useNavigate } from 'react-router-dom';
-import api from '../../../config/axios';
 import { toast } from 'react-toastify';
-
-interface MentorRecord {
-  mentorId: number;
-  userId?: number;
-  fullName: string;
-  residenceAddress: string;
-  phone: string;
-  email: string;
-  isTeachingTheory: boolean;
-  isTeachingPractice: boolean;
-  currentCourse?: string | null;
-}
+import { useAppDispatch, useAppSelector } from '../../../app/store';
+import {
+  deleteMentor,
+  fetchMentors,
+  selectMentorsList,
+} from '../../../features/mentors/mentorsSlice';
+import type { MentorRecord } from '../../../features/mentors/mentorsTypes';
+import type { ApiRejectedPayload } from '../../../features/shared/apiError';
 
 type TeachingFilter = 'all' | 'theory' | 'practice' | 'both';
 
 function MentorTable() {
-  const [data, setData] = useState<MentorRecord[]>([]);
+  const dispatch = useAppDispatch();
+  const data = useAppSelector(selectMentorsList);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [deletingMentorId, setDeletingMentorId] = useState<number | null>(null);
+  const [deletingMentorId, setDeletingMentorId] = useState<number | string | null>(null);
 
   const [searchValue, setSearchValue] = useState<string>('');
   const [teachingFilter, setTeachingFilter] = useState<TeachingFilter>('all');
@@ -35,16 +31,14 @@ function MentorTable() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const response = await api.get('Mentor/list');
-      const res: MentorRecord[] = Array.isArray(response.data) ? response.data : [];
-      setData(res);
+      await dispatch(fetchMentors()).unwrap();
     } catch (err) {
       console.error(err);
       setErrorMessage('Không thể tải danh sách giáo viên. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     void getAllMentors();
@@ -94,7 +88,8 @@ function MentorTable() {
     navigate('tao-giao-vien');
   };
 
-  const handleUpdate = (mentorId: number) => {
+  const handleUpdate = (mentorId: number | string | undefined) => {
+    if (mentorId == null) return;
     window.scrollTo(0, 0);
     navigate(`cap-nhat-giao-vien/${mentorId}`, { state: { mentorId } });
   };
@@ -104,6 +99,7 @@ function MentorTable() {
     mentor: MentorRecord
   ) => {
     e.stopPropagation();
+    if (mentor.mentorId == null) return;
     const confirmed = window.confirm(
       `Bạn có chắc chắn muốn xoá giáo viên "${mentor.fullName}" (Mã GV: ${mentor.mentorId}) không?`
     );
@@ -111,14 +107,14 @@ function MentorTable() {
 
     try {
       setDeletingMentorId(mentor.mentorId);
-      await api.delete('/Mentor/delete/' + mentor.mentorId);
+      await dispatch(deleteMentor(mentor.mentorId)).unwrap();
       toast.success('Xoá giáo viên thành công!');
       await getAllMentors();
     } catch (err: unknown) {
       console.error(err);
-      const axiosErr = err as { response?: { data?: { error?: string } } };
+      const rejected = err as ApiRejectedPayload | undefined;
       toast.error(
-        axiosErr.response?.data?.error || 'Không thể xoá giáo viên. Vui lòng thử lại.'
+        rejected?.error || 'Không thể xoá giáo viên. Vui lòng thử lại.'
       );
     } finally {
       setDeletingMentorId(null);

@@ -1,24 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import './staff-exam-table.scss';
 import { Link } from 'react-router-dom';
-import api from '../../../config/axios';
 import { toast } from 'react-toastify';
-
-interface ExamRecord {
-  examId: number | string;
-  courseId?: string | null;
-  examName?: string | null;
-  examTime?: string | null;
-  description?: string | null;
-  duration?: number | string | null;
-  limitQuestion?: number | string | null;
-  limitKeyQuestion?: number | string | null;
-  minimumCorrectAnswer?: number | string | null;
-  status: boolean;
-}
+import { useAppDispatch, useAppSelector } from '../../../app/store';
+import {
+  createTestForExam,
+  fetchExams,
+  selectExamsList,
+} from '../../../features/exams/examsSlice';
+import type { ApiRejectedPayload } from '../../../features/shared/apiError';
 
 function ExamTable() {
-  const [data, setData] = useState<ExamRecord[]>([]);
+  const dispatch = useAppDispatch();
+  const data = useAppSelector(selectExamsList);
   const [searchValue, setSearchValue] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
@@ -49,21 +43,18 @@ function ExamTable() {
   const records = filteredData.slice(firsIndex, lastIndex);
   const numbers = npage > 0 ? [...Array(npage + 1).keys()].slice(1) : [];
 
-  const getAllExams = async () => {
+  const getAllExams = useCallback(async () => {
     setIsLoading(true);
     setLoadError(false);
     try {
-      const response = await api.get('Exam/list');
-      const res: ExamRecord[] = Array.isArray(response.data) ? response.data : [];
-      setData(res);
+      await dispatch(fetchExams()).unwrap();
     } catch (err) {
       console.log(err);
-      setData([]);
       setLoadError(true);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [dispatch]);
 
   const prePage = () => {
     if (safePage > 1) {
@@ -99,25 +90,20 @@ function ExamTable() {
 
   const handleCreate = async (examId: number | string) => {
     try {
-      const examIDJson = JSON.stringify(examId);
-      await api.post('Test/add', {
-        Headers: {
-          'Content-Type': 'application/json',
-        },
-        examId: examIDJson,
-      });
+      await dispatch(createTestForExam(examId)).unwrap();
 
       const notificationMessage = 'Tạo bài thi thành công!';
       localStorage.setItem('notificationMessage', notificationMessage);
       location.reload();
     } catch (error) {
-      toast.error(error?.response?.data?.error || 'Không thể tạo bài thi.');
+      const apiErr = (error as ApiRejectedPayload | null)?.error;
+      toast.error(apiErr || 'Không thể tạo bài thi.');
     }
   };
 
   useEffect(() => {
     void getAllExams();
-  }, []);
+  }, [getAllExams]);
 
   useEffect(() => {
     const storedNotificationMessage = localStorage.getItem('notificationMessage');

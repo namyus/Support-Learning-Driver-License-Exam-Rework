@@ -1,35 +1,21 @@
 import './member-information-section.scss';
 import MemberImg from '../../../../assets/imgs/member/member_img.png';
-import api from '../../../config/axios';
 import { useCallback, useEffect, useState } from 'react';
 import { CircularProgress } from '@mui/material';
 import { useAppDispatch } from '../../../app/store';
 import { fetchCourseById } from '../../../features/courses/coursesSlice';
+import { fetchMemberByUserId } from '../../../features/members/membersSlice';
+import type { MemberRecord } from '../../../features/members/membersTypes';
+import { fetchStudentByMemberId } from '../../../features/students/studentsSlice';
+import type { StudentRecord } from '../../../features/students/studentsTypes';
 
 interface StoredUser {
   userID?: number | string;
 }
 
-interface MemberRecord {
-  memberID?: number | string;
-  courseId?: string | number;
-  fullName?: string;
-  dob?: string;
-  gender?: string;
-  nationality?: string;
-  phone?: string;
-  email?: string;
-  residenceAddress?: string;
-  identityCardNumber?: string;
-}
-
 interface CourseRecord {
   courseId?: string | number;
   name?: string;
-}
-
-interface StudentRecord {
-  studentId?: string | number;
 }
 
 function readStoredUser(): StoredUser | null {
@@ -63,8 +49,8 @@ function MemberInformationForm() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const response = await api.get<MemberRecord>('Member/' + userID);
-      setMember(response.data);
+      const memberData = await dispatch(fetchMemberByUserId(userID)).unwrap();
+      setMember(memberData);
     } catch (err) {
       console.log(err);
       setMember(null);
@@ -72,7 +58,7 @@ function MemberInformationForm() {
     } finally {
       setIsLoading(false);
     }
-  }, [userID]);
+  }, [dispatch, userID]);
 
   useEffect(() => {
     void getMemberByUID();
@@ -101,18 +87,18 @@ function MemberInformationForm() {
     }
     const getStudentById = async () => {
       try {
-        const response = await api.get<StudentRecord>(
-          'Student/' + member.memberID
-        );
-        setStudent(response.data);
+        const res = await dispatch(
+          fetchStudentByMemberId(member.memberID!)
+        ).unwrap();
+        setStudent(res.student);
       } catch (err) {
         console.log(err);
       }
     };
     void getStudentById();
-  }, [member, course]);
+  }, [dispatch, member, course]);
 
-  const formatDate = (dbDate?: string) => {
+  const formatDate = (dbDate?: string | null) => {
     if (!dbDate) {
       return '—';
     }

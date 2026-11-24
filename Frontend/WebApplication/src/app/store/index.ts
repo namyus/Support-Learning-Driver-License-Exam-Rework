@@ -15,4 +15,3 @@ export {
   LOGIN_SUCCESS_NOTIFY_STORAGE_KEY,
 } from './authSlice';
 export type { AuthState, AuthenticatedUserPayload } from './authSlice';
-export type { FeatureRequest, FeatureRequestResult, FeatureState } from '../../features/shared/createFeatureSlice';

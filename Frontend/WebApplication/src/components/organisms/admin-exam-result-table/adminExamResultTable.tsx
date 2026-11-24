@@ -1,28 +1,25 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useCallback, useState, useEffect, useMemo } from 'react'
 import './admin-exam-result-table.scss'
-import api from '../../../config/axios';
 import { toast } from 'react-toastify';
-
-interface ExamResult {
-    testId: number;
-    studentId: string;
-    examId: number;
-    score: number | null;
-    pass: boolean | null;
-}
+import { useAppDispatch, useAppSelector } from '../../../app/store';
+import {
+    fetchTests,
+    selectTestsList,
+    updateTestIsPass,
+} from '../../../features/exams/examsSlice';
 
 function ExamResultTable() {
-    const [test, setTest] = useState<ExamResult[]>([])
+    const dispatch = useAppDispatch();
+    const test = useAppSelector(selectTestsList);
     const [, setUpdateSuccess] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState(true);
     const [hasLoadError, setHasLoadError] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
 
-    const getAllMembers = async () => {
+    const getAllMembers = useCallback(async () => {
         try {
-            const response = await api.get('Test/list');
-            setTest(response.data);
+            await dispatch(fetchTests()).unwrap();
             setHasLoadError(false);
         } catch (err) {
             setHasLoadError(true);
@@ -30,12 +27,12 @@ function ExamResultTable() {
         } finally {
             setIsLoading(false);
         }
-    }
+    }, [dispatch]);
 
-    const updatePassStatus = async (studentId) => {
+    const updatePassStatus = async (studentId: string) => {
         try {
             // Update the payment status
-            await api.put('Test/editIsPass?studentID=' + studentId);
+            await dispatch(updateTestIsPass(studentId)).unwrap();
             setUpdateSuccess(true);
 
             const notificationMessage = "Cập nhật thành công!";
@@ -73,8 +70,8 @@ function ExamResultTable() {
     }, [currentPage, npage]);
 
     useEffect(() => {
-        getAllMembers();
-    }, [])
+        void getAllMembers();
+    }, [getAllMembers])
 
     useEffect(() => {
         const storedNotificationMessage = localStorage.getItem("notificationMessage");

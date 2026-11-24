@@ -1,28 +1,18 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './admin-member-table.scss';
-import api from '../../../config/axios';
-
-interface MemberRecord {
-  memberID: number;
-  userID?: number;
-  fullName: string;
-  dob?: string;
-  gender?: string;
-  residenceAddress?: string;
-  phone: string;
-  email: string;
-  identityCardNumber?: string;
-  nationality?: string;
-  drivingLicenseNumber?: string;
-  drivingLicenseTier?: string;
-  isPaid: boolean;
-  courseId?: string;
-}
+import { useAppDispatch, useAppSelector } from '../../../app/store';
+import {
+  fetchMemberById,
+  fetchMembers,
+  selectMembersList,
+} from '../../../features/members/membersSlice';
+import type { MemberRecord } from '../../../features/members/membersTypes';
 
 type PaymentFilter = 'all' | 'paid' | 'unpaid';
 
 function MemberTable() {
-  const [data, setData] = useState<MemberRecord[]>([]);
+  const dispatch = useAppDispatch();
+  const data = useAppSelector(selectMembersList);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedMember, setSelectedMember] = useState<MemberRecord | null>(null);
@@ -36,16 +26,14 @@ function MemberTable() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const response = await api.get('Members');
-      const res: MemberRecord[] = Array.isArray(response.data) ? response.data : [];
-      setData(res);
+      await dispatch(fetchMembers()).unwrap();
     } catch (err) {
       console.error(err);
       setErrorMessage('Không thể tải danh sách thành viên. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
   const handleInspectMember = async (
     e: React.MouseEvent<HTMLButtonElement>,
@@ -53,12 +41,13 @@ function MemberTable() {
   ) => {
     e.stopPropagation();
     setSelectedMember(member);
+    if (member.memberID == null) return;
     try {
-      const detailRes = await api.get(`Member?memberId=${member.memberID}`);
-      if (detailRes.data && typeof detailRes.data === 'object') {
+      const detailRes = await dispatch(fetchMemberById(member.memberID)).unwrap();
+      if (detailRes.member && typeof detailRes.member === 'object') {
         setSelectedMember((prev) =>
           prev && prev.memberID === member.memberID
-            ? { ...prev, ...detailRes.data }
+            ? { ...prev, ...detailRes.member }
             : prev
         );
       }
@@ -71,7 +60,7 @@ function MemberTable() {
     void getAllMembers();
   }, [getAllMembers]);
 
-  const formatDate = (dbDate?: string) => {
+  const formatDate = (dbDate?: string | null) => {
     if (!dbDate) return '—';
     const date = new Date(dbDate);
     if (Number.isNaN(date.getTime())) return '—';

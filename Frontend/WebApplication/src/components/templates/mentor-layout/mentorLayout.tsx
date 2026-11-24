@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { BsJustify } from 'react-icons/bs';
-import api from '../../../config/axios';
+import { useAppDispatch, useAppSelector } from '../../../app/store';
+import {
+  fetchMentorByUserId,
+  selectCurrentMentor,
+} from '../../../features/mentors/mentorsSlice';
 import IconButton from '../../atoms/icon-button/iconButton';
 import PortalUserInfo from '../../molecules/portal-user-info/portalUserInfo';
 import MentorSidebar from '../../organisms/mentor-sidebar/mentorSidebar';
@@ -41,9 +45,12 @@ function readStoredMentorProfile(): MentorProfileRecord | null {
 }
 
 function MentorLayout() {
+  const dispatch = useAppDispatch();
+  const reduxMentor = useAppSelector(selectCurrentMentor);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [user] = useState(readMentorSessionUser);
-  const [mentor, setMentor] = useState<MentorProfileRecord | null>(readStoredMentorProfile);
+  const [cachedMentor, setCachedMentor] = useState<MentorProfileRecord | null>(readStoredMentorProfile);
+  const mentor = (reduxMentor as MentorProfileRecord | null) ?? cachedMentor;
   const menuToggleRef = useRef<HTMLButtonElement>(null);
   const location = useLocation();
 
@@ -53,10 +60,10 @@ function MentorLayout() {
 
     const loadMentorProfile = async () => {
       try {
-        const response = await api.get('Mentor/user/' + userID);
-        if (response.data) {
-          setMentor(response.data as MentorProfileRecord);
-          sessionStorage.setItem('loginedMentor', JSON.stringify(response.data));
+        const mentorData = await dispatch(fetchMentorByUserId(userID)).unwrap();
+        if (mentorData) {
+          setCachedMentor(mentorData as MentorProfileRecord);
+          sessionStorage.setItem('loginedMentor', JSON.stringify(mentorData));
         }
       } catch (err) {
         console.error(err);
@@ -64,7 +71,7 @@ function MentorLayout() {
     };
 
     void loadMentorProfile();
-  }, [user?.userID]);
+  }, [dispatch, user?.userID]);
 
   const displayName =
     mentor?.fullName?.trim() ||

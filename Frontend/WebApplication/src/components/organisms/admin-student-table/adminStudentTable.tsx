@@ -1,20 +1,18 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './admin-student-table.scss';
-import api from '../../../config/axios';
 import { toast } from 'react-toastify';
-
-interface StudentRecord {
-  studentId: string;
-  memberId?: number;
-  courseId: string;
-  fullName: string;
-  totalHour?: number | null;
-  totalKm?: number | null;
-  pass?: boolean | null;
-}
+import { useAppDispatch, useAppSelector } from '../../../app/store';
+import { updateStudentAttendance } from '../../../features/classes/classesSlice';
+import type { ApiRejectedPayload } from '../../../features/shared/apiError';
+import {
+  fetchStudents,
+  selectStudentsList,
+} from '../../../features/students/studentsSlice';
+import type { StudentRecord } from '../../../features/students/studentsTypes';
 
 function StudentTable() {
-  const [data, setData] = useState<StudentRecord[]>([]);
+  const dispatch = useAppDispatch();
+  const data = useAppSelector(selectStudentsList);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [updatingStudentId, setUpdatingStudentId] = useState<string | null>(null);
@@ -29,16 +27,14 @@ function StudentTable() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const response = await api.get('/Students');
-      const res: StudentRecord[] = Array.isArray(response.data) ? response.data : [];
-      setData(res);
+      await dispatch(fetchStudents()).unwrap();
     } catch (err) {
       console.error(err);
       setErrorMessage('Không thể tải danh sách học viên. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     void getAllStudent();
@@ -49,16 +45,18 @@ function StudentTable() {
     student: StudentRecord
   ) => {
     e.stopPropagation();
+    const studentId = String(student.studentId ?? '');
+    if (!studentId) return;
     try {
-      setUpdatingStudentId(student.studentId);
-      await api.patch('Lesson/attendance/' + student.studentId);
+      setUpdatingStudentId(studentId);
+      await dispatch(updateStudentAttendance(studentId)).unwrap();
       toast.success('Cập nhật điểm danh thành công!');
       await getAllStudent();
     } catch (err: unknown) {
       console.error(err);
-      const axiosErr = err as { response?: { data?: { error?: string } } };
-      if (axiosErr.response?.data?.error) {
-        toast.error(axiosErr.response.data.error);
+      const apiErr = (err as ApiRejectedPayload | null)?.error;
+      if (apiErr) {
+        toast.error(apiErr);
       } else {
         toast.error('Không thể cập nhật điểm danh. Vui lòng thử lại.');
       }
@@ -86,7 +84,7 @@ function StudentTable() {
 
       if (!query) return true;
 
-      const matchId = (student.studentId ?? '').toLowerCase().includes(query);
+      const matchId = String(student.studentId ?? '').toLowerCase().includes(query);
       const matchName = (student.fullName ?? '').toLowerCase().includes(query);
       const matchCourse = (student.courseId ?? '').toLowerCase().includes(query);
       const matchMemberId = String(student.memberId ?? '')

@@ -1,28 +1,22 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import './admin-invoice-table.scss'
-import api from '../../../config/axios';
-
-interface InvoiceRecord {
-    invoiceId: number;
-    staffName: string;
-    memberName: string;
-    courseId: string;
-    invoiceTime: string;
-    amountPaid: number;
-}
+import { useAppDispatch, useAppSelector } from '../../../app/store';
+import {
+    fetchInvoices,
+    selectInvoicesList,
+} from '../../../features/invoices/invoicesSlice';
 
 function InvoiceTable() {
-    const [invoice, setInvoice] = useState<InvoiceRecord[]>([])
+    const dispatch = useAppDispatch();
+    const invoice = useAppSelector(selectInvoicesList);
     const [isLoading, setIsLoading] = useState(true);
     const [hasLoadError, setHasLoadError] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [courseFilter, setCourseFilter] = useState('all');
 
-    const getAllInvoices = async () => {
+    const getAllInvoices = useCallback(async () => {
         try {
-            const response = await api.get('Invoice/list');
-            const res = response.data;
-            setInvoice(res);
+            await dispatch(fetchInvoices()).unwrap();
             setHasLoadError(false);
         } catch (error) {
             setHasLoadError(true);
@@ -30,7 +24,7 @@ function InvoiceTable() {
         } finally {
             setIsLoading(false);
         }
-    }
+    }, [dispatch]);
 
     //paganition part
     const [currentPage, setCurrentPage] = useState(1);
@@ -75,8 +69,8 @@ function InvoiceTable() {
     }
 
     useEffect(() => {
-        getAllInvoices();
-    }, []);
+        void getAllInvoices();
+    }, [getAllInvoices]);
 
     return (
         <div className='payment-management-container'>

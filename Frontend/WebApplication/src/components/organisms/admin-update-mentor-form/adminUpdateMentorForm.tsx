@@ -1,24 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import api from '../../../config/axios';
 import './admin-update-mentor-form.scss';
 import { toast } from 'react-toastify';
+import { useAppDispatch } from '../../../app/store';
+import {
+  fetchMentorById,
+  updateMentor as updateMentorThunk,
+} from '../../../features/mentors/mentorsSlice';
+import type { UpdateMentorPayload } from '../../../features/mentors/mentorsTypes';
+import type { ApiRejectedPayload } from '../../../features/shared/apiError';
 
-interface MentorUpdateFormData {
-  mentorId: number;
-  fullName: string;
-  email: string;
-  phone: string;
-  residenceAddress: string;
-  isTeachingTheory: boolean;
-  isTeachingPractice: boolean;
-}
+type MentorUpdateFormData = UpdateMentorPayload;
 
 interface LocationState {
   mentorId?: number;
 }
 
 function UpdateMentorForm() {
+  const dispatch = useAppDispatch();
   const { mentorId: paramMentorId } = useParams<{ mentorId?: string }>();
   const location = useLocation();
   const navigate = useNavigate();
@@ -56,8 +55,8 @@ function UpdateMentorForm() {
     setLoadError(null);
 
     try {
-      const response = await api.get(`Mentor/${parsedMentorId}`);
-      const mentor = response.data;
+      const response = await dispatch(fetchMentorById(parsedMentorId)).unwrap();
+      const mentor = response.mentor;
       setInputData({
         mentorId: Number(mentor?.mentorId ?? parsedMentorId),
         fullName: mentor?.fullName ?? '',
@@ -69,12 +68,10 @@ function UpdateMentorForm() {
       });
     } catch (err: unknown) {
       console.error(err);
-      const axiosErr = err as {
-        response?: { status?: number; data?: { error?: string } };
-      };
-      if (axiosErr.response?.status === 404) {
+      const rejected = err as ApiRejectedPayload | undefined;
+      if (rejected?.status === 404) {
         setLoadError(
-          axiosErr.response.data?.error ||
+          rejected.error ||
             `Không tìm thấy thông tin giáo viên có mã #${parsedMentorId}.`
         );
       } else {
@@ -83,7 +80,7 @@ function UpdateMentorForm() {
     } finally {
       setIsLoading(false);
     }
-  }, [isValidMentorId, parsedMentorId]);
+  }, [dispatch, isValidMentorId, parsedMentorId]);
 
   useEffect(() => {
     void getMentorById();
@@ -116,24 +113,24 @@ function UpdateMentorForm() {
     try {
       setIsSubmitting(true);
       setError(null);
-      await api.put('Mentor/update', {
-        mentorId: inputData.mentorId,
-        fullName: inputData.fullName,
-        email: inputData.email,
-        phone: inputData.phone,
-        residenceAddress: inputData.residenceAddress,
-        isTeachingTheory: inputData.isTeachingTheory,
-        isTeachingPractice: inputData.isTeachingPractice,
-      });
+      await dispatch(
+        updateMentorThunk({
+          mentorId: inputData.mentorId,
+          fullName: inputData.fullName,
+          email: inputData.email,
+          phone: inputData.phone,
+          residenceAddress: inputData.residenceAddress,
+          isTeachingTheory: inputData.isTeachingTheory,
+          isTeachingPractice: inputData.isTeachingPractice,
+        })
+      ).unwrap();
       toast.success('Cập nhật giáo viên thành công!');
       navigate('/quan-ly-giao-vien');
     } catch (err: unknown) {
-      const axiosErr = err as {
-        response?: { status?: number; data?: { error?: string } };
-      };
-      if (axiosErr.response?.data?.error) {
-        setError(axiosErr.response.data.error);
-      } else if (axiosErr.response?.status === 409) {
+      const rejected = err as ApiRejectedPayload | undefined;
+      if (rejected?.error) {
+        setError(rejected.error);
+      } else if (rejected?.status === 409) {
         setError('Email đã tồn tại.');
       } else {
         setError('Không thể cập nhật thông tin giáo viên. Vui lòng thử lại.');

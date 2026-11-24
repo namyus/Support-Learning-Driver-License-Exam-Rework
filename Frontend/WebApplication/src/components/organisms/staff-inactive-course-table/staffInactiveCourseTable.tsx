@@ -86,24 +86,6 @@ function InactiveCourseTable() {
         return `${day}/${month}/${year}`;
     }
 
-    // const handleDelete = async (courseId) => {
-    //     try {
-    //         // Perform the deletion
-    //         await api.delete('Course/deactivate/' + courseId);
-
-    //         // Reload the page after successful deletion
-    //         setTimeout(() => {
-    //             location.reload();
-    //         }, 0.1);
-
-    //         // Once deletion is successful, fetch the updated data
-    //         await getAllCourse();
-
-    //     } catch (err) {
-    //         console.log(err);
-    //     }
-    // }
-
     return (
         <div className='courses-table-container'>
             <div className="courses-table-title text-center text-uppercase">

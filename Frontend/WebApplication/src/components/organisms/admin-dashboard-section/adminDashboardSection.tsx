@@ -19,9 +19,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import api from "../../../config/axios";
 import { useAppDispatch } from "../../../app/store";
 import { fetchCourseList } from "../../../features/courses/coursesSlice";
+import { fetchUsers } from "../../../features/members/membersSlice";
 import "./admin-dashboard-section.scss";
 
 interface UserCounts {
@@ -66,15 +66,15 @@ function Home() {
     setErrorMessage(null);
 
     const [usersResult, coursesResult] = await Promise.allSettled([
-      api.get("Users"),
+      dispatch(fetchUsers()).unwrap(),
       dispatch(fetchCourseList()).unwrap(),
     ]);
 
     const errors: string[] = [];
 
     if (usersResult.status === "fulfilled") {
-      const rawUsers: ApiUserItem[] = Array.isArray(usersResult.value.data)
-        ? usersResult.value.data
+      const rawUsers: ApiUserItem[] = Array.isArray(usersResult.value)
+        ? (usersResult.value as ApiUserItem[])
         : [];
 
       const counts = rawUsers.reduce<UserCounts>(
