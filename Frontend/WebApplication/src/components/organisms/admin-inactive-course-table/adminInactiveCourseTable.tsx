@@ -11,6 +11,7 @@ import {
 } from 'react-icons/bs';
 import { useAppDispatch } from '../../../app/store';
 import { activateCourse, fetchInactiveCourses } from '../../../features/courses/coursesSlice';
+import type { ApiRejectedPayload } from '../../../features/courses/coursesTypes';
 
 interface InactiveCourseItem {
     courseId: string;
@@ -44,8 +45,14 @@ function InactiveCourseTable() {
             const res = (await dispatch(fetchInactiveCourses()).unwrap()) as InactiveCourseItem[];
             setData(res);
         } catch (err) {
-            console.error(err);
-            setErrorMessage('Không thể tải danh sách khoá học chưa mở. Vui lòng thử lại.');
+            const rejected = err as ApiRejectedPayload | undefined;
+            if (rejected?.status === 404) {
+                setData([]);
+                setErrorMessage(null);
+            } else {
+                console.error(err);
+                setErrorMessage('Không thể tải danh sách khoá học chưa mở. Vui lòng thử lại.');
+            }
         } finally {
             setIsLoading(false);
         }

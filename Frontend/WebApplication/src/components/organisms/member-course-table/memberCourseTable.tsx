@@ -82,14 +82,19 @@ function CourseTable() {
           fetchCourseDetailsByMonth(targetMonth)
         ).unwrap()) as CourseDetailItem[];
 
+        const currentDate = new Date();
+        currentDate.setHours(0, 0, 0, 0);
+
         const validCourse = courses.filter((course) => {
           const courseStartDate = new Date(course.startDate);
-          const currentDate = new Date();
-          currentDate.setHours(0, 0, 0, 0);
+          courseStartDate.setHours(0, 0, 0, 0);
           return courseStartDate >= currentDate;
         });
 
-        const tempCourseData: CourseRowItem[] = validCourse.map((course) => {
+        const displayedCourses =
+          validCourse.length > 0 ? validCourse : courses;
+
+        const tempCourseData: CourseRowItem[] = displayedCourses.map((course) => {
           const detailsForCourse = courseDetails.filter(
             (detail) => detail.courseId === course.courseId
           );

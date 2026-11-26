@@ -25,7 +25,7 @@ function Course() {
     const currentDate = new Date();
 
     // Filter courses based on the upcoming month/year condition
-    const filteredCourses = courses.filter((course) => {
+    const upcomingCourses = courses.filter((course) => {
         const currentMonth = currentDate.getMonth() + 1; // Adding 1 because months are zero-indexed
         const currentYear = currentDate.getFullYear();
 
@@ -35,6 +35,11 @@ function Course() {
             (course.courseYear === currentYear && course.courseMonth >= currentMonth)
         );
     });
+
+    const isShowingFallbackCourses = upcomingCourses.length === 0 && courses.length > 0;
+    const filteredCourses = isShowingFallbackCourses
+        ? [...courses].reverse()
+        : upcomingCourses;
 
     const npage = Math.ceil(filteredCourses.length / recordPage);
     const lastIndex = currentPage * recordPage;
@@ -135,8 +140,16 @@ function Course() {
         >
             <div className='gh-section-header'>
                 <h2 id='gh-course-heading' className='gh-section-title'>
-                    Các khoá học
+                    {isShowingFallbackCourses ? 'Các khóa học hiện có' : 'Các khoá học'}
                 </h2>
+                {isShowingFallbackCourses && (
+                    <p
+                        className='gh-course-state__text'
+                        style={{ marginTop: '8px', marginBottom: 0, textAlign: 'center' }}
+                    >
+                        Hiện chưa có khóa học sắp khai giảng — hiển thị các khóa học hiện có trong hệ thống.
+                    </p>
+                )}
             </div>
 
             {isLoading ? (

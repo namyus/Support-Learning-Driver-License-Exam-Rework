@@ -13,7 +13,7 @@ function SiteFooter({ variant = 'guest' }: SiteFooterProps) {
       className={`footer-container gh-footer-container site-footer--${variant}`}
     >
       <div className="footer-information gh-footer-info">
-        <h1 className="gh-footer-title">Trung tâm đào tạo lái xe FDRIVING</h1>
+        <h2 className="gh-footer-title">Trung tâm đào tạo lái xe FDRIVING</h2>
         <div className="contact-information gh-footer-contact">
           <ul>
             <li>Liên hệ</li>

@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-scroll';
 import { Button, Modal } from 'react-bootstrap';
 import { Link as Forward, useLocation } from 'react-router-dom';
+import { selectIsAuthenticated, useAppSelector } from '../../../app/store';
 import BrandLogo from '../../atoms/brand-logo/brandLogo';
 import IconButton from '../../atoms/icon-button/iconButton';
 import './guest-header.scss';
 
 function GuestHeader() {
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const location = useLocation();
   const isHomePage = location.pathname === '/';
   const isCoursePage = location.pathname.startsWith('/khoahoc');
@@ -105,6 +107,7 @@ function GuestHeader() {
                 duration={500}
                 href="#center-introduction"
                 className="gh-nav-brand"
+                aria-label="FDriving - Trang chủ"
                 onClick={closeMobileMenu}
               >
                 <BrandLogo
@@ -116,6 +119,7 @@ function GuestHeader() {
               <Forward
                 to="/"
                 className="gh-nav-brand"
+                aria-label="FDriving - Trang chủ"
                 onClick={closeMobileMenu}
               >
                 <BrandLogo
@@ -127,13 +131,15 @@ function GuestHeader() {
           </div>
 
           <div className="gh-nav-mobile-controls">
-            <IconButton
-              className="gh-nav-bell gh-nav-bell--mobile"
-              label="Chú ý"
-              title="Chú ý"
-              onClick={handleOpenNoticeModal}
-              icon={renderBellIcon()}
-            />
+            {isAuthenticated && (
+              <IconButton
+                className="gh-nav-bell gh-nav-bell--mobile"
+                label="Chú ý"
+                title="Chú ý"
+                onClick={handleOpenNoticeModal}
+                icon={renderBellIcon()}
+              />
+            )}
 
             <button
               ref={toggleButtonRef}
@@ -259,13 +265,15 @@ function GuestHeader() {
             </ul>
 
             <div className="gh-nav-actions">
-              <IconButton
-                className="gh-nav-bell gh-nav-bell--desktop"
-                label="Chú ý"
-                title="Chú ý"
-                onClick={handleOpenNoticeModal}
-                icon={renderBellIcon()}
-              />
+              {isAuthenticated && (
+                <IconButton
+                  className="gh-nav-bell gh-nav-bell--desktop"
+                  label="Chú ý"
+                  title="Chú ý"
+                  onClick={handleOpenNoticeModal}
+                  icon={renderBellIcon()}
+                />
+              )}
               <Forward
                 to="/dang-nhap"
                 className="gh-nav-btn gh-nav-btn--ghost"

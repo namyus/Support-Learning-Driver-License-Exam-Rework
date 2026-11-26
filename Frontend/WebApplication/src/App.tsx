@@ -1,8 +1,9 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Bounce, ToastContainer } from 'react-toastify';
 import 'react-toastify/ReactToastify.css';
 import ScrollToTop from './config/scrollToTop';
 import { selectCurrentUser, useAppSelector } from './app/store';
+import RouteFallbackPage from './pages/authorization/routeFallbackPage';
 
 // Layout Templates
 import GuestLayout from './components/templates/guest-layout/guestLayout';
@@ -84,6 +85,48 @@ import AdminReportPage from './pages/admin/adminReportPage';
 import AdminExamResultManagementPage from './pages/admin/adminExamResultManagementPage';
 import AdminStudentManagementPage from './pages/admin/adminStudentManagementPage';
 
+const PROTECTED_ROUTE_PREFIXES = [
+  '/bang-dieu-khien',
+  '/thong-tin-ca-nhan',
+  '/quan-ly-khoa-hoc',
+  '/quan-ly-nhan-vien',
+  '/quan-ly-thanh-vien',
+  '/quan-ly-giao-vien',
+  '/quan-ly-lich-hoc',
+  '/quan-ly-tin-tuc',
+  '/quan-ly-thanh-toan',
+  '/bao-cao',
+  '/quan-ly-ket-qua',
+  '/quan-ly-hoc-vien',
+  '/quan-ly-nguoi-dung',
+  '/quan-ly-ky-thi',
+  '/lich-day',
+  '/danh-sach-khoa-hoc-giao-vien',
+  '/khoahoc/xac-nhan-khoa-hoc',
+  '/khoa-hoc-cua-ban',
+  '/danh-sach-khoa-hoc',
+  '/ho-so-thi',
+  '/kiem-tra',
+];
+
+function isKnownProtectedPath(pathname: string): boolean {
+  const normalized = pathname.toLowerCase();
+  return PROTECTED_ROUTE_PREFIXES.some(
+    (prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`)
+  );
+}
+
+function UnmatchedRouteHandler({ isAuthenticated }: { isAuthenticated: boolean }) {
+  const location = useLocation();
+  if (isKnownProtectedPath(location.pathname)) {
+    if (!isAuthenticated) {
+      return <Navigate to="/dang-nhap" replace state={{ from: location.pathname }} />;
+    }
+    return <RouteFallbackPage variant="forbidden" />;
+  }
+  return <RouteFallbackPage variant="not-found" />;
+}
+
 function App() {
   const user = useAppSelector(selectCurrentUser);
 
@@ -116,6 +159,7 @@ function App() {
               <Route path="dang-nhap" element={<LoginPage />} />
               <Route path="dang-ky" element={<RegistrationPage />} />
               <Route path="quen-mat-khau" element={<ForgetPasswordPage />} />
+              <Route path="*" element={<UnmatchedRouteHandler isAuthenticated={false} />} />
             </>
           ) : (
             <>
@@ -236,6 +280,7 @@ function App() {
                   </Route>
                 </>
               )}
+              <Route path="*" element={<UnmatchedRouteHandler isAuthenticated={true} />} />
             </>
           )}
         </Route>

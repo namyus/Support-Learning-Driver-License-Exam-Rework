@@ -70,7 +70,9 @@ function CourseTable() {
                 return courseEndDate >= today;
             });
 
-            const tempCourseData: CourseRowItem[] = validCourse.map(course => {
+            const displayedCourses = validCourse.length > 0 ? validCourse : courses;
+
+            const tempCourseData: CourseRowItem[] = displayedCourses.map(course => {
                 const detailsForCourse = courseDetails.filter(detail => detail.courseId === course.courseId);
                 return { ...course, details: detailsForCourse };
             });
