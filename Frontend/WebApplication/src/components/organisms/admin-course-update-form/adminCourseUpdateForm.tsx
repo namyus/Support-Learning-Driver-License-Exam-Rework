@@ -1,29 +1,109 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './admin-course-update-form.scss';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import Button from 'react-bootstrap/Button';
+import Modal from 'react-bootstrap/Modal';
 import { BsArrowLeft, BsExclamationCircle } from 'react-icons/bs';
 import { useAppDispatch } from '../../../app/store';
 import { fetchCourseById, updateCourse as updateCourseThunk } from '../../../features/courses/coursesSlice';
 import type { ApiRejectedPayload, UpdateCoursePayload } from '../../../features/courses/coursesTypes';
 
+const MISSING_MENTOR_MESSAGE =
+    'Khóa học này chưa được phân công giáo viên lý thuyết (Mentor). Backend hiện yêu cầu MentorID hợp lệ để cập nhật. Vui lòng liên hệ quản trị viên để kiểm tra hoặc phân công giáo viên trước khi tiếp tục.';
+
+const MISSING_MENTOR_ID_MESSAGE =
+    'Khóa học này chưa có mã giáo viên lý thuyết (MentorID) hợp lệ từ hệ thống. Backend hiện yêu cầu MentorID hợp lệ để cập nhật. Vui lòng liên hệ quản trị viên để kiểm tra hoặc phân công giáo viên trước khi tiếp tục.';
+
 function getApiErrorMessage(err: unknown, fallback: string): string {
     if (typeof err === 'object' && err !== null) {
-        if ('error' in err && typeof (err as ApiRejectedPayload).error === 'string') {
-            return (err as ApiRejectedPayload).error!;
+        const rejected = err as ApiRejectedPayload & {
+            response?: { status?: number; data?: { error?: string; message?: string } };
+        };
+        const status = rejected.status ?? rejected.response?.status;
+        if (typeof status === 'number' && status >= 500) {
+            return 'Lỗi hệ thống máy chủ. Vui lòng thử lại sau.';
         }
-        if ('message' in err && typeof (err as ApiRejectedPayload).message === 'string' && (err as ApiRejectedPayload).message) {
-            return (err as ApiRejectedPayload).message;
+        if (typeof rejected.error === 'string' && rejected.error.trim().length > 0) {
+            return rejected.error.trim();
         }
         if (
-            'response' in err &&
-            typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error ===
-                'string'
+            typeof rejected.response?.data?.error === 'string' &&
+            rejected.response.data.error.trim().length > 0
         ) {
-            return (err as { response: { data: { error: string } } }).response.data.error;
+            return rejected.response.data.error.trim();
+        }
+        if (
+            typeof rejected.response?.data?.message === 'string' &&
+            rejected.response.data.message.trim().length > 0
+        ) {
+            return rejected.response.data.message.trim();
+        }
+        if (
+            typeof rejected.message === 'string' &&
+            rejected.message.trim().length > 0 &&
+            rejected.message.trim() !== '[object Object]'
+        ) {
+            return rejected.message.trim();
         }
     }
     return fallback;
+}
+
+function formatDateToInputValue(dateString: string): string {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function parseValidMentorId(value: unknown): number | null {
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+    const parsed = Number(value);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+interface CourseFormState {
+    courseId: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    numberOfStudents: number;
+    limitStudent: number;
+    status: boolean;
+}
+
+function normalizeFormState(data: Partial<CourseFormState>): CourseFormState {
+    return {
+        courseId: (data.courseId ?? '').trim(),
+        name: (data.name ?? '').trim(),
+        startDate: formatDateToInputValue(data.startDate ?? ''),
+        endDate: formatDateToInputValue(data.endDate ?? ''),
+        numberOfStudents: Number(data.numberOfStudents ?? 0),
+        limitStudent: Number(data.limitStudent ?? 0),
+        status: data.status ?? true,
+    };
+}
+
+function hasFormChanges(current: CourseFormState, initial: CourseFormState | null): boolean {
+    if (!initial) return true;
+    const normalizedCurrent = normalizeFormState(current);
+    const normalizedInitial = normalizeFormState(initial);
+    return (
+        normalizedCurrent.courseId !== normalizedInitial.courseId ||
+        normalizedCurrent.name !== normalizedInitial.name ||
+        normalizedCurrent.startDate !== normalizedInitial.startDate ||
+        normalizedCurrent.endDate !== normalizedInitial.endDate ||
+        normalizedCurrent.limitStudent !== normalizedInitial.limitStudent ||
+        normalizedCurrent.status !== normalizedInitial.status
+    );
 }
 
 function UpdateCourseForm() {
@@ -31,7 +111,13 @@ function UpdateCourseForm() {
     const { courseId } = useParams();
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [inputData, setInputData] = useState<UpdateCoursePayload>({
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const isSubmittingRef = useRef(false);
+    const [initialData, setInitialData] = useState<CourseFormState | null>(null);
+    const [theoryTeacherId, setTheoryTeacherId] = useState<number | null>(null);
+    const [theoryTeacherName, setTheoryTeacherName] = useState<string | null>(null);
+    const [mentorModalMessage, setMentorModalMessage] = useState<string | null>(null);
+    const [inputData, setInputData] = useState<CourseFormState>({
         courseId: '',
         name: '',
         startDate: '',
@@ -46,68 +132,114 @@ function UpdateCourseForm() {
     const getCourseById = useCallback(async () => {
         if (!courseId) return;
         setIsLoading(true);
+        setError(null);
         try {
             const data = await dispatch(fetchCourseById(courseId)).unwrap();
             if (data) {
-                setInputData(data as UpdateCoursePayload);
+                const normalized = normalizeFormState({
+                    courseId: data.courseId,
+                    name: data.name,
+                    startDate: data.startDate,
+                    endDate: data.endDate,
+                    numberOfStudents: data.numberOfStudents ?? 0,
+                    limitStudent: data.limitStudent,
+                    status: data.status ?? true,
+                });
+                setInputData(normalized);
+                setInitialData(normalized);
+                setTheoryTeacherId(parseValidMentorId(data.theoryTeacherId));
+                setTheoryTeacherName(
+                    typeof data.theoryTeacher === 'string' && data.theoryTeacher.trim().length > 0
+                        ? data.theoryTeacher.trim()
+                        : null
+                );
             }
         } catch (err) {
             const msg = getApiErrorMessage(err, 'Không thể tải thông tin khoá học.');
             setError(msg);
+            toast.error(msg);
         } finally {
             setIsLoading(false);
         }
     }, [courseId, dispatch]);
 
-    const formatDateToInputValue = (dateString: string) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        if (Number.isNaN(date.getTime())) {
-            return '';
-        }
-        const year = date.getFullYear();
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const day = date.getDate().toString().padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
-
     const updateCourse = async () => {
-        try {
-            if (!/^(\d{4})B2$/.test(inputData.courseId)) {
-                setError('Mã khoá học phải có định dạng XXXXB2 với X là số.');
-                return;
-            } else if (!/^(\d{3})B2$/.test(inputData.name)) {
-                setError('Tên khoá học phải có định dạng XXXB2 với X là số.');
-                return;
-            } else if (
-                formatDateToInputValue(inputData.endDate) &&
-                formatDateToInputValue(inputData.startDate) &&
-                formatDateToInputValue(inputData.endDate) <
-                    formatDateToInputValue(inputData.startDate)
-            ) {
-                setError('Ngày bế giảng phải sau ngày khai giảng.');
-                return;
-            } else if (
-                Number.isNaN(inputData.limitStudent) ||
-                inputData.limitStudent <= 0
-            ) {
-                setError('Số học viên tối đa phải lớn hơn 0.');
-                return;
-            }
+        if (isSubmittingRef.current) {
+            return;
+        }
 
-            await dispatch(updateCourseThunk(inputData)).unwrap();
+        if (!hasFormChanges(inputData, initialData)) {
+            setError(null);
+            toast.info('Không có thay đổi để cập nhật.');
+            return;
+        }
+
+        if (!/^(\d{4})B2$/.test(inputData.courseId.trim())) {
+            const msg = 'Mã khoá học phải có định dạng XXXXB2 với X là số.';
+            setError(msg);
+            toast.error(msg);
+            return;
+        } else if (!/^(\d{3})B2$/.test(inputData.name.trim())) {
+            const msg = 'Tên khoá học phải có định dạng XXXB2 với X là số.';
+            setError(msg);
+            toast.error(msg);
+            return;
+        } else if (
+            formatDateToInputValue(inputData.endDate) &&
+            formatDateToInputValue(inputData.startDate) &&
+            formatDateToInputValue(inputData.endDate) <
+                formatDateToInputValue(inputData.startDate)
+        ) {
+            const msg = 'Ngày bế giảng phải sau ngày khai giảng.';
+            setError(msg);
+            toast.error(msg);
+            return;
+        } else if (
+            Number.isNaN(inputData.limitStudent) ||
+            inputData.limitStudent <= 0
+        ) {
+            const msg = 'Số học viên tối đa phải lớn hơn 0.';
+            setError(msg);
+            toast.error(msg);
+            return;
+        }
+
+        // Safety check: block PUT before reaching Backend when no valid Theory Mentor ID exists
+        // to avoid partial database writes followed by Backend MentorID 400 validation failure.
+        if (theoryTeacherId === null) {
+            setError(null);
+            setMentorModalMessage(
+                theoryTeacherName ? MISSING_MENTOR_ID_MESSAGE : MISSING_MENTOR_MESSAGE
+            );
+            return;
+        }
+
+        isSubmittingRef.current = true;
+        setIsSubmitting(true);
+        setError(null);
+
+        try {
+            const normalized = normalizeFormState(inputData);
+            const payload: UpdateCoursePayload = {
+                ...normalized,
+                theoryTeacherId,
+            };
+            await dispatch(updateCourseThunk(payload)).unwrap();
             toast.success('Cập nhật khoá học thành công');
             setError(null);
             navigate('/quan-ly-khoa-hoc');
+            window.scroll({
+                top: 0,
+                behavior: 'instant',
+            });
         } catch (err) {
             const msg = getApiErrorMessage(err, 'Cập nhật khoá học thất bại.');
             setError(msg);
-            return;
+            toast.error(msg);
+        } finally {
+            isSubmittingRef.current = false;
+            setIsSubmitting(false);
         }
-        window.scroll({
-            top: 0,
-            behavior: 'instant',
-        });
     };
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -266,8 +398,9 @@ function UpdateCourseForm() {
                                 <button
                                     className='btn btn-primary admin-btn-submit'
                                     type='submit'
+                                    disabled={isSubmitting}
                                 >
-                                    Lưu cập nhật
+                                    {isSubmitting ? 'Đang lưu...' : 'Lưu cập nhật'}
                                 </button>
                             </div>
                         </form>
@@ -278,6 +411,32 @@ function UpdateCourseForm() {
                     <p>Không tìm thấy thông tin khoá học.</p>
                 </div>
             )}
+
+            <Modal
+                show={mentorModalMessage !== null}
+                onHide={() => setMentorModalMessage(null)}
+                centered
+                aria-labelledby='mentor-missing-modal-title'
+            >
+                <Modal.Header closeButton>
+                    <Modal.Title id='mentor-missing-modal-title'>
+                        Không thể cập nhật khóa học
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <p style={{ marginBottom: 0, lineHeight: 1.6 }}>
+                        {mentorModalMessage}
+                    </p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button
+                        variant='primary'
+                        onClick={() => setMentorModalMessage(null)}
+                    >
+                        Đã hiểu
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </div>
     );
 }

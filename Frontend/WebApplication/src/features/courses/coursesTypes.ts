@@ -8,7 +8,8 @@ export interface CourseRecord {
   courseFee?: number;
   passTheoryLs?: number;
   passKm?: number;
-  theoryTeacherId?: string;
+  theoryTeacherId?: number | string | null;
+  theoryTeacher?: string | null;
   courseMonth?: number;
   courseYear?: number;
   status?: boolean;
@@ -53,6 +54,7 @@ export interface UpdateCoursePayload {
   endDate: string;
   numberOfStudents: number;
   limitStudent: number;
+  theoryTeacherId?: number;
   status: boolean;
 }
 
