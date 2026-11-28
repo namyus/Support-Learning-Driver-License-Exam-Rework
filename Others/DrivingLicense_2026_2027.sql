@@ -1040,19 +1040,6 @@ INSERT [dbo].[Member] ([memberID],  [dob], [gender], [nationality], [nation], [t
 							[passport], [cardProvidedDate], [cardProvidedLocation], [drivingLicenseNumber], [drivingLicenseTier],
 								[drivingLicenseProvider], [drivingLicenseProvidedDate], [drivingTestTier],[integratedDrivingLicense],
 									[revokedDrivingLicense], [relatedDocument], [registrationDate], [isPaid], [courseID], [userID])
-		VALUES('26', N'1998-02-26', N'Nam', N'Việt Nam', '', N'Số 26 Đường Demo, Phường Mẫu, TP. Hồ Chí Minh', N'Số 26 Đường Demo, Phường Mẫu, TP. Hồ Chí Minh', N'000000000026', NULL, '2022-10-22', N'Công An Phường', N'DEMO-DL-0026', 'A1', N'Công An Thành Phố', '2023-8-22', 'B2', 2, 2, '', '2023-10-22', 0, '0103B2', '27')
-
-GO
-INSERT [dbo].[Member] ([memberID],  [dob], [gender], [nationality], [nation], [temporaryAddress], [residenceAddress], [identityCardNumber],
-							[passport], [cardProvidedDate], [cardProvidedLocation], [drivingLicenseNumber], [drivingLicenseTier],
-								[drivingLicenseProvider], [drivingLicenseProvidedDate], [drivingTestTier],[integratedDrivingLicense],
-									[revokedDrivingLicense], [relatedDocument], [registrationDate], [isPaid], [courseID], [userID])
-		VALUES('27', N'1998-03-27', N'Nam', N'Việt Nam', '', N'Số 27 Đường Demo, Phường Mẫu, TP. Hồ Chí Minh', N'Số 27 Đường Demo, Phường Mẫu, TP. Hồ Chí Minh', N'000000000027', NULL, '2022-10-22', N'Công An Phường', N'DEMO-DL-0027', 'A1', N'Công An Thành Phố', '2023-8-22', 'B2', 2, 2, '', '2023-10-22', 0, '0103B2', '36')
-GO
-INSERT [dbo].[Member] ([memberID],  [dob], [gender], [nationality], [nation], [temporaryAddress], [residenceAddress], [identityCardNumber],
-							[passport], [cardProvidedDate], [cardProvidedLocation], [drivingLicenseNumber], [drivingLicenseTier],
-								[drivingLicenseProvider], [drivingLicenseProvidedDate], [drivingTestTier],[integratedDrivingLicense],
-									[revokedDrivingLicense], [relatedDocument], [registrationDate], [isPaid], [courseID], [userID])
 		VALUES('28', N'1998-04-28', N'Nam', N'Việt Nam', '', N'Số 28 Đường Demo, Phường Mẫu, TP. Hồ Chí Minh', N'Số 28 Đường Demo, Phường Mẫu, TP. Hồ Chí Minh', N'000000000028', NULL, '2022-10-22', N'Công An Phường', N'DEMO-DL-0028', 'A1', N'Công An Thành Phố', '2023-8-22', 'B2', 2, 2, '', '2023-10-22', 1, '1101B2', '37')
 GO
 INSERT [dbo].[Member] ([memberID],  [dob], [gender], [nationality], [nation], [temporaryAddress], [residenceAddress], [identityCardNumber],
@@ -1130,7 +1117,7 @@ GO
 SET IDENTITY_INSERT [dbo].[Class] ON
 GO
 INSERT [dbo].[Class] ([classID], [mentorID], [courseID], [isTheoryClass], [dayOfWeek], [limitStudent], [shift], [status])
-	VALUES ('1', '1', '1101B2', 1, '', '', N'Chiều', 1)
+	VALUES (1, 1, N'1101B2', 1, 0, NULL, NULL, 1)
 GO
 INSERT [dbo].[Class] ([classID], [mentorID], [courseID], [isTheoryClass], [dayOfWeek], [limitStudent], [shift], [status])
 	VALUES ('2', '1', '1101B2', 0, '2', 3, N'Chiều', 1)
