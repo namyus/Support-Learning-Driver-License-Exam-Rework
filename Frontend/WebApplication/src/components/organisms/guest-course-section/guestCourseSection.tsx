@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppDispatch } from '../../../app/store';
+import { filterLatestEligibleMonthCourses } from '../../../features/courses/courseHomeFilter';
 import { fetchCourseList } from '../../../features/courses/coursesSlice';
 import type { ApiRejectedPayload } from '../../../features/courses/coursesTypes';
 import './guest-course-section.scss';
@@ -22,24 +23,8 @@ function Course() {
     const [currentPage, setCurrentPage] = useState(1);
     const recordPage = 3;
 
-    const currentDate = new Date();
-
-    // Filter courses based on the upcoming month/year condition
-    const upcomingCourses = courses.filter((course) => {
-        const currentMonth = currentDate.getMonth() + 1; // Adding 1 because months are zero-indexed
-        const currentYear = currentDate.getFullYear();
-
-        // Compare courseMonth and courseYear (greater than or equal)
-        return (
-            course.courseYear > currentYear ||
-            (course.courseYear === currentYear && course.courseMonth >= currentMonth)
-        );
-    });
-
-    const isShowingFallbackCourses = upcomingCourses.length === 0 && courses.length > 0;
-    const filteredCourses = isShowingFallbackCourses
-        ? [...courses].reverse()
-        : upcomingCourses;
+    // Filter to ONLY the single latest eligible (year, month) <= current month/year in Asia/Ho_Chi_Minh
+    const filteredCourses = filterLatestEligibleMonthCourses(courses);
 
     const npage = Math.ceil(filteredCourses.length / recordPage);
     const lastIndex = currentPage * recordPage;
@@ -140,16 +125,8 @@ function Course() {
         >
             <div className='gh-section-header'>
                 <h2 id='gh-course-heading' className='gh-section-title'>
-                    {isShowingFallbackCourses ? 'Các khóa học hiện có' : 'Các khoá học'}
+                    Các khoá học
                 </h2>
-                {isShowingFallbackCourses && (
-                    <p
-                        className='gh-course-state__text'
-                        style={{ marginTop: '8px', marginBottom: 0, textAlign: 'center' }}
-                    >
-                        Hiện chưa có khóa học sắp khai giảng — hiển thị các khóa học hiện có trong hệ thống.
-                    </p>
-                )}
             </div>
 
             {isLoading ? (

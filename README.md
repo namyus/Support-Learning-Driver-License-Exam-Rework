@@ -6,6 +6,12 @@
 - Create lessons for a course
 - Take a final theory exam
 - ...
+
+### **Database Setup**
+The canonical database script is `Others/DrivingLicense_2026_2027.sql` (compatible with SQL Server 2022 and Azure SQL Database Query Editor). It contains two independently executable sections:
+1. **Mode A — Fresh Installation**: Run on an empty database to create all 21 tables, constraints, roles, and sanitized 2026–2027 demo data (9 courses, 54 `CourseDetails`). Re-running on an existing database aborts safely without duplicating data.
+2. **Mode B — Existing Azure Demo Upgrade**: Highlight and run only Section 2 on an existing Azure SQL demo database to safely shift the 9 whitelisted demo courses (`1101B2`–`0103B2`) from 2023–2024 to 2026–2027 without modifying users, members, students, invoices, or other records.
+3. **Manual Credential Provisioning**: No plaintext or shared demo passwords are stored in the public SQL script. After running Mode A, set private account passwords manually as documented at the top of `Others/DrivingLicense_2026_2027.sql`.
   
 ### **Screenshots**
 ![image](https://github.com/Stayer1231/Support-Learning-Driver-License-Exam/assets/89825940/e93c92c1-9805-48f1-a99d-58d3f5b32e78)

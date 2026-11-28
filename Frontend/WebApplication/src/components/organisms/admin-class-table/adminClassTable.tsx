@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import './admin-class-table.scss';
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { Button, Modal } from "react-bootstrap";
 import {
   BsArrowClockwise,
@@ -17,7 +18,53 @@ import {
   fetchLessonsByClassId,
   selectClassesList,
 } from "../../../features/classes/classesSlice";
+import { fetchCourseDetailsByCourseId } from "../../../features/courses/coursesSlice";
 import type { ClassRecord, LessonRecord } from "../../../features/classes/classesTypes";
+
+const EXPIRED_THEORY_SCHEDULE_MESSAGE =
+  "Lịch học này đã cũ rồi, không thể tạo lịch học mới.";
+
+const EXPIRED_ACTION_BTN_STYLE: React.CSSProperties = {
+  backgroundColor: "#e2e8f0",
+  borderColor: "#cbd5e1",
+  color: "#64748b",
+  opacity: 0.75,
+  cursor: "not-allowed",
+};
+
+function getTodayInHoChiMinh(): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const y = parts.find((p) => p.type === "year")?.value ?? "";
+  const m = parts.find((p) => p.type === "month")?.value ?? "";
+  const d = parts.find((p) => p.type === "day")?.value ?? "";
+  return `${y}-${m}-${d}`;
+}
+
+function isTheoryScheduleEligible(courseTimeEnd?: string | null): boolean {
+  if (typeof courseTimeEnd !== "string" || !courseTimeEnd.trim()) {
+    return false;
+  }
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(courseTimeEnd.trim());
+  if (!match) {
+    return false;
+  }
+  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const check = new Date(Date.UTC(year, month - 1, day));
+  if (
+    check.getUTCFullYear() !== year ||
+    check.getUTCMonth() !== month - 1 ||
+    check.getUTCDate() !== day
+  ) {
+    return false;
+  }
+  const endDateYMD = `${match[1]}-${match[2]}-${match[3]}`;
+  return endDateYMD >= getTodayInHoChiMinh();
+}
 
 function formatDate(dbDate?: string): string {
   if (!dbDate) return "—";
@@ -340,6 +387,9 @@ export function TheoryClassTable() {
   const recordPage = 10;
   const navigate = useNavigate();
   const [lesson, setLesson] = useState<LessonRecord[]>([]);
+  const [eligibleByCourse, setEligibleByCourse] = useState<
+    Record<string, boolean>
+  >({});
 
   const [show, setShow] = useState(false);
 
@@ -353,6 +403,29 @@ export function TheoryClassTable() {
       const res = await dispatch(fetchClasses()).unwrap();
       const resValid = res.filter((classItem) => classItem.isTheoryClass);
       setClasss(resValid);
+
+      const uniqueCourseIds = Array.from(
+        new Set(
+          resValid
+            .map((item) => item.courseId)
+            .filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+        )
+      );
+
+      const eligibility: Record<string, boolean> = {};
+      await Promise.all(
+        uniqueCourseIds.map(async (cid) => {
+          try {
+            const { details } = await dispatch(
+              fetchCourseDetailsByCourseId(cid)
+            ).unwrap();
+            eligibility[cid] = isTheoryScheduleEligible(details?.[0]?.courseTimeEnd);
+          } catch {
+            eligibility[cid] = false;
+          }
+        })
+      );
+      setEligibleByCourse(eligibility);
     } catch (error) {
       console.error(error);
       setErrorMessage(
@@ -424,7 +497,11 @@ export function TheoryClassTable() {
   };
 
   // Fix BUG-ADM-12: Store courseId consistently as a plain string
-  const handleCreateButton = (courseId?: string) => {
+  const handleCreateButton = (courseId?: string, isEligible = false) => {
+    if (!isEligible) {
+      toast.warning(EXPIRED_THEORY_SCHEDULE_MESSAGE);
+      return;
+    }
     localStorage.setItem("courseId", String(courseId ?? ""));
     navigate("tao-lop-hoc");
   };
@@ -581,14 +658,33 @@ export function TheoryClassTable() {
                         </td>
                         <td className="button text-center">
                           <div className="admin-row-actions">
-                            <button
-                              className="btn btn-primary admin-action-btn admin-action-btn--schedule"
-                              type="button"
-                              onClick={() => handleCreateButton(item.courseId)}
-                            >
-                              <BsCalendarPlus aria-hidden="true" />
-                              <span>Tạo lịch học</span>
-                            </button>
+                            {(() => {
+                              const isEligible = Boolean(
+                                item.courseId && eligibleByCourse[item.courseId]
+                              );
+                              return (
+                                <button
+                                  className={
+                                    isEligible
+                                      ? "btn btn-primary admin-action-btn admin-action-btn--schedule"
+                                      : "btn admin-action-btn"
+                                  }
+                                  style={
+                                    isEligible
+                                      ? undefined
+                                      : EXPIRED_ACTION_BTN_STYLE
+                                  }
+                                  aria-disabled={!isEligible}
+                                  type="button"
+                                  onClick={() =>
+                                    handleCreateButton(item.courseId, isEligible)
+                                  }
+                                >
+                                  <BsCalendarPlus aria-hidden="true" />
+                                  <span>Tạo lịch học</span>
+                                </button>
+                              );
+                            })()}
                           </div>
                         </td>
                       </tr>
