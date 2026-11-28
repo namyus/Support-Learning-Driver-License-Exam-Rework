@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import './admin-create-course-form.scss';
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -6,9 +6,12 @@ import { Button, Modal } from "react-bootstrap";
 import {
   BsArrowLeft,
   BsCalendarRange,
+  BsCheckCircleFill,
   BsExclamationCircle,
+  BsInfoCircle,
   BsPlusCircle,
   BsPlusLg,
+  BsXCircleFill,
 } from "react-icons/bs";
 import { useAppDispatch } from "../../../app/store";
 import {
@@ -18,6 +21,11 @@ import {
   fetchCourseContents,
   fetchCourseList,
 } from "../../../features/courses/coursesSlice";
+import {
+  formatYMDToVN,
+  MIN_SECTION_DURATION_DAYS,
+  validateCourseSchedule,
+} from "../../../features/courses/courseScheduleValidation";
 import type { ApiRejectedPayload } from "../../../features/courses/coursesTypes";
 import { fetchTheoryMentors } from "../../../features/mentors/mentorsSlice";
 
@@ -363,11 +371,39 @@ function CreateCourseForm() {
                 id="endDate"
                 name="endDate"
                 value={inputData.endDate}
+                min={inputData.startDate || undefined}
                 required
                 onChange={(e) =>
                   setInputData({ ...inputData, endDate: e.target.value })
                 }
               />
+              {inputData.startDate &&
+                inputData.endDate &&
+                inputData.endDate < inputData.startDate && (
+                  <small className="field-error" role="alert">
+                    Ngày bế giảng phải từ ngày khai giảng ({formatYMDToVN(inputData.startDate)}) trở đi.
+                  </small>
+                )}
+            </div>
+
+            <div className="form-group form-group--full">
+              <div className="admin-schedule-rules-panel" role="note">
+                <div className="admin-schedule-rules-panel__title">
+                  <BsInfoCircle aria-hidden="true" />
+                  <span>Lưu ý quy tắc phân bổ lịch học ở Bước 2</span>
+                </div>
+                <ul className="admin-schedule-rules-panel__list">
+                  <li>
+                    Tất cả học phần ở Bước 2 phải nằm trong khoảng{" "}
+                    <strong>Ngày khai giảng – Ngày bế giảng</strong> bạn chọn ở đây.
+                  </li>
+                  <li>
+                    Mỗi học phần yêu cầu kéo dài tối thiểu{" "}
+                    <strong>{MIN_SECTION_DURATION_DAYS} ngày</strong> và sắp xếp nối tiếp nhau
+                    (ngày bắt đầu học phần sau phải lớn hơn ngày kết thúc học phần trước).
+                  </li>
+                </ul>
+              </div>
             </div>
 
             <div className="form-group">
@@ -496,9 +532,21 @@ export function CreateCourseDetail() {
   });
 
   const [show, setShow] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
+
+  const scheduleValidation = useMemo(
+    () =>
+      validateCourseSchedule(inputData, {
+        startDate: course.startDate,
+        endDate: course.endDate,
+      }),
+    [inputData, course.startDate, course.endDate]
+  );
 
   useEffect(() => {
     setInputData((prevInputData) =>
@@ -566,9 +614,10 @@ export function CreateCourseDetail() {
     void getCourseContent();
   }, [getCourseContent]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setHasAttemptedSubmit(true);
 
     if (!courseId || !course.startDate || !course.endDate) {
       setError(
@@ -577,77 +626,17 @@ export function CreateCourseDetail() {
       return;
     }
 
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmCreateCourse = async () => {
+    if (!scheduleValidation.isValid || isSubmitting) {
+      return;
+    }
+
+    setError(null);
+    setIsSubmitting(true);
     try {
-      for (let i = 0; i < inputData.length; i++) {
-        const row = inputData[i];
-        if (!row.courseContent || !row.courseTimeStart || !row.courseTimeEnd) {
-          setError(`Vui lòng nhập đầy đủ thông tin cho Nội dung ${i + 1}.`);
-          return;
-        }
-
-        const startDateParts = row.courseTimeStart.split("-");
-        const endDateParts = row.courseTimeEnd.split("-");
-        const startDate = parseInt(startDateParts[2], 10);
-        const endDate = parseInt(endDateParts[2], 10);
-
-        const startMonth = parseInt(startDateParts[1], 10);
-        const endMonth = parseInt(endDateParts[1], 10);
-
-        // ngày bắt đầu lớn hơn ngày kết thúc
-        if (row.courseTimeStart > row.courseTimeEnd) {
-          setError(
-            `Nội dung ${i + 1} có ngày bắt đầu lớn hơn ngày kết thúc.`
-          );
-          return;
-          // ngày bắt đầu bé hơn ngày khai giảng
-        } else if (row.courseTimeStart < course.startDate) {
-          setError(
-            `Nội dung ${i + 1} có ngày bắt đầu bé hơn ngày khai giảng.`
-          );
-          return;
-          // ngày kết thúc lớn hơn ngày bế giảng
-        } else if (row.courseTimeEnd > course.endDate) {
-          setError(
-            `Nội dung ${i + 1} có ngày kết thúc lớn hơn ngày bế giảng.`
-          );
-          return;
-          // Fix BUG-ADM-06: Removed duplicate (courseTimeEnd < courseTimeStart) check so the 7-day minimum duration check actually runs
-        } else if (endMonth - startMonth < 1 && endDate - startDate < 7) {
-          setError(
-            `Nội dung ${i + 1} có ngày kết thúc phải cách ngày bắt đầu là 7 ngày.`
-          );
-          return;
-        }
-
-        for (let j = i + 1; j < inputData.length; j++) {
-          const nextRow = inputData[j];
-          // so nội dung bị trùng
-          if (row.courseContent === nextRow.courseContent) {
-            setError(`Nội dung ${i + 1} và nội dung ${j + 1} bị trùng.`);
-            return;
-            // so sánh trùng ngày bắt đầu
-          } else if (row.courseTimeStart === nextRow.courseTimeStart) {
-            if (
-              row.courseContent === "Thực Hành Trên Đường" &&
-              nextRow.courseContent === "Thực Hành Trên Xe Tự Động"
-            ) {
-              continue;
-            } else {
-              setError(
-                `Nội dung ${i + 1} và nội dung ${j + 1} có ngày bắt đầu trùng nhau.`
-              );
-              return;
-            }
-            // ngày bắt đầu của j phải lớn hơn ngày kết thúc của i
-          } else if (nextRow.courseTimeStart <= row.courseTimeEnd) {
-            setError(
-              `Nội dung ${j + 1} có ngày bắt đầu bé hơn hoặc bằng ngày kết thúc của nội dung ${i + 1}.`
-            );
-            return;
-          }
-        }
-      }
-
       const formattedListObjects = inputData.map((data) => ({ ...data }));
 
       // Create course first
@@ -656,15 +645,19 @@ export function CreateCourseDetail() {
       // If success then adding course details
       if (response.status === 200) {
         await dispatch(addCourseDetails(formattedListObjects)).unwrap();
+        setShowConfirmModal(false);
         toast.success("Tạo khoá học thành công");
         navigate("/quan-ly-khoa-hoc/chua-mo");
       }
     } catch (err) {
+      setShowConfirmModal(false);
       const msg = getApiErrorMessage(
         err,
         "Không thể tạo khoá học. Vui lòng kiểm tra lại dữ liệu."
       );
       setError(msg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -726,6 +719,36 @@ export function CreateCourseDetail() {
             </div>
           )}
 
+          <div className="admin-schedule-rules-panel" role="region" aria-label="Quy tắc phân bổ lịch học">
+            <div className="admin-schedule-rules-panel__title">
+              <BsInfoCircle aria-hidden="true" />
+              <span>Quy tắc phân bổ lịch đào tạo</span>
+            </div>
+            <ul className="admin-schedule-rules-panel__list">
+              <li>
+                Mọi ngày bắt đầu và kết thúc phải nằm trong khung khoá học{" "}
+                <strong>
+                  {formatDate(course.startDate)} – {formatDate(course.endDate)}
+                </strong>.
+              </li>
+              <li>
+                Mỗi học phần phải kéo dài tối thiểu{" "}
+                <strong>{MIN_SECTION_DURATION_DAYS} ngày</strong> (ngày kết thúc
+                cách ngày bắt đầu ít nhất {MIN_SECTION_DURATION_DAYS} ngày).
+              </li>
+              <li>
+                Không được chọn trùng nội dung; học phần sau phải bắt đầu{" "}
+                <strong>sau ngày kết thúc của học phần trước</strong> (tối thiểu từ
+                ngày kết thúc trước + 1 ngày).
+              </li>
+              <li>
+                Ngoại lệ: <em>&ldquo;Thực Hành Trên Đường&rdquo;</em> và{" "}
+                <em>&ldquo;Thực Hành Trên Xe Tự Động&rdquo;</em> được phép có cùng
+                ngày bắt đầu.
+              </li>
+            </ul>
+          </div>
+
           {error && (
             <div className="error-message admin-form-alert" role="alert">
               <BsExclamationCircle aria-hidden="true" />
@@ -733,91 +756,205 @@ export function CreateCourseDetail() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <div className="admin-detail-blocks">
-              {inputData.map((row, index) => (
-                <div key={index} className="admin-detail-card">
-                  <div className="admin-detail-card__header">
-                    <span className="admin-detail-card__badge">
-                      Học phần {index + 1}
-                    </span>
-                  </div>
+              {inputData.map((row, index) => {
+                const sectionCheck = scheduleValidation.sections[index];
+                const showContentErr =
+                  Boolean(sectionCheck?.contentError) &&
+                  (hasAttemptedSubmit || Boolean(row.courseContent));
+                const showStartErr =
+                  Boolean(sectionCheck?.startDateError) &&
+                  (hasAttemptedSubmit || Boolean(row.courseTimeStart));
+                const showEndErr =
+                  Boolean(sectionCheck?.endDateError) &&
+                  (hasAttemptedSubmit || Boolean(row.courseTimeEnd));
+                const hasVisibleError =
+                  showContentErr || showStartErr || showEndErr;
 
-                  <div className="admin-form-grid">
-                    <div className="form-group form-group--full">
-                      <label
-                        htmlFor={`courseContent${index + 1}`}
-                        className="col-form-label"
+                return (
+                  <div
+                    key={index}
+                    className={`admin-detail-card ${
+                      sectionCheck?.isValid
+                        ? "admin-detail-card--valid"
+                        : hasVisibleError
+                        ? "admin-detail-card--invalid"
+                        : ""
+                    }`}
+                  >
+                    <div className="admin-detail-card__header">
+                      <div className="admin-detail-card__title-group">
+                        <span className="admin-detail-card__badge">
+                          Học phần {index + 1}
+                        </span>
+                        {row.courseContent && (
+                          <span className="admin-detail-card__name">
+                            {row.courseContent}
+                          </span>
+                        )}
+                      </div>
+                      <span
+                        className={`admin-detail-status ${
+                          sectionCheck?.isValid
+                            ? "admin-detail-status--valid"
+                            : hasVisibleError
+                            ? "admin-detail-status--invalid"
+                            : "admin-detail-status--pending"
+                        }`}
                       >
-                        Nội dung {index + 1}{" "}
-                        <span className="required-mark">*</span>
-                      </label>
-                      <select
-                        className="form-control"
-                        id={`courseContent${index + 1}`}
-                        name={`courseContent${index + 1}`}
-                        value={row.courseContent}
-                        required
-                        onChange={(e) =>
-                          handleChange(index, "courseContent", e.target.value)
-                        }
-                      >
-                        <option value="" disabled>
-                          Chọn nội dung khoá học
-                        </option>
-                        {courseContent.map((content) => (
-                          <option
-                            value={content.courseContent1}
-                            key={content.courseContent1}
-                          >
-                            {content.courseContent1}
+                        {sectionCheck?.isValid ? (
+                          <>
+                            <BsCheckCircleFill aria-hidden="true" />
+                            <span>
+                              Hợp lệ ({sectionCheck.durationDays} ngày)
+                            </span>
+                          </>
+                        ) : hasVisibleError ? (
+                          <>
+                            <BsXCircleFill aria-hidden="true" />
+                            <span>Cần điều chỉnh</span>
+                          </>
+                        ) : (
+                          <span>Chưa nhập đủ</span>
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="admin-detail-card__requirements">
+                      <span>
+                        <strong>Khung hợp lệ:</strong> Bắt đầu từ{" "}
+                        <strong>
+                          {formatYMDToVN(sectionCheck?.requiredStartMin)}
+                        </strong>{" "}
+                        • Kết thúc tối thiểu{" "}
+                        <strong>
+                          {formatYMDToVN(sectionCheck?.requiredEndMin)}
+                        </strong>{" "}
+                        (tối thiểu {MIN_SECTION_DURATION_DAYS} ngày) – tối đa{" "}
+                        <strong>
+                          {formatYMDToVN(sectionCheck?.requiredEndMax)}
+                        </strong>
+                      </span>
+                      {sectionCheck?.specialNote && (
+                        <span className="admin-detail-card__special-note">
+                          {sectionCheck.specialNote}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="admin-form-grid">
+                      <div className="form-group form-group--full">
+                        <label
+                          htmlFor={`courseContent${index + 1}`}
+                          className="col-form-label"
+                        >
+                          Nội dung {index + 1}{" "}
+                          <span className="required-mark">*</span>
+                        </label>
+                        <select
+                          className={`form-control ${
+                            showContentErr ? "is-invalid" : ""
+                          }`}
+                          id={`courseContent${index + 1}`}
+                          name={`courseContent${index + 1}`}
+                          value={row.courseContent}
+                          required
+                          onChange={(e) =>
+                            handleChange(index, "courseContent", e.target.value)
+                          }
+                        >
+                          <option value="" disabled>
+                            Chọn nội dung khoá học
                           </option>
-                        ))}
-                      </select>
-                    </div>
+                          {courseContent.map((content) => (
+                            <option
+                              value={content.courseContent1}
+                              key={content.courseContent1}
+                            >
+                              {content.courseContent1}
+                            </option>
+                          ))}
+                        </select>
+                        {showContentErr && (
+                          <small className="field-error" role="alert">
+                            {sectionCheck.contentError}
+                          </small>
+                        )}
+                      </div>
 
-                    <div className="form-group">
-                      <label
-                        htmlFor={`startDate${index + 1}`}
-                        className="col-form-label"
-                      >
-                        Ngày bắt đầu <span className="required-mark">*</span>
-                      </label>
-                      <input
-                        type="date"
-                        className="form-control"
-                        id={`startDate${index + 1}`}
-                        name={`courseTimeStart${index + 1}`}
-                        value={row.courseTimeStart}
-                        required
-                        onChange={(e) =>
-                          handleChange(index, "courseTimeStart", e.target.value)
-                        }
-                      />
-                    </div>
+                      <div className="form-group">
+                        <label
+                          htmlFor={`startDate${index + 1}`}
+                          className="col-form-label"
+                        >
+                          Ngày bắt đầu <span className="required-mark">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          className={`form-control ${
+                            showStartErr ? "is-invalid" : ""
+                          }`}
+                          id={`startDate${index + 1}`}
+                          name={`courseTimeStart${index + 1}`}
+                          value={row.courseTimeStart}
+                          min={sectionCheck?.requiredStartMin || undefined}
+                          max={sectionCheck?.requiredEndMax || undefined}
+                          required
+                          onChange={(e) =>
+                            handleChange(index, "courseTimeStart", e.target.value)
+                          }
+                        />
+                        {showStartErr ? (
+                          <small className="field-error" role="alert">
+                            {sectionCheck.startDateError}
+                          </small>
+                        ) : (
+                          <small className="field-hint">
+                            Tối thiểu từ:{" "}
+                            {formatYMDToVN(sectionCheck?.requiredStartMin)}
+                          </small>
+                        )}
+                      </div>
 
-                    <div className="form-group">
-                      <label
-                        htmlFor={`endDate${index + 1}`}
-                        className="col-form-label"
-                      >
-                        Ngày kết thúc <span className="required-mark">*</span>
-                      </label>
-                      <input
-                        type="date"
-                        className="form-control"
-                        id={`endDate${index + 1}`}
-                        name={`courseTimeEnd${index + 1}`}
-                        value={row.courseTimeEnd}
-                        required
-                        onChange={(e) =>
-                          handleChange(index, "courseTimeEnd", e.target.value)
-                        }
-                      />
+                      <div className="form-group">
+                        <label
+                          htmlFor={`endDate${index + 1}`}
+                          className="col-form-label"
+                        >
+                          Ngày kết thúc <span className="required-mark">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          className={`form-control ${
+                            showEndErr ? "is-invalid" : ""
+                          }`}
+                          id={`endDate${index + 1}`}
+                          name={`courseTimeEnd${index + 1}`}
+                          value={row.courseTimeEnd}
+                          min={sectionCheck?.requiredEndMin || undefined}
+                          max={sectionCheck?.requiredEndMax || undefined}
+                          required
+                          onChange={(e) =>
+                            handleChange(index, "courseTimeEnd", e.target.value)
+                          }
+                        />
+                        {showEndErr ? (
+                          <small className="field-error" role="alert">
+                            {sectionCheck.endDateError}
+                          </small>
+                        ) : (
+                          <small className="field-hint">
+                            Tối thiểu từ:{" "}
+                            {formatYMDToVN(sectionCheck?.requiredEndMin)} (cách
+                            ngày bắt đầu ≥ {MIN_SECTION_DURATION_DAYS} ngày)
+                          </small>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="admin-form-actions admin-form-actions--between">
@@ -841,7 +978,7 @@ export function CreateCourseDetail() {
                   className="btn btn-primary admin-btn-submit"
                   type="submit"
                 >
-                  Tạo khoá học
+                  Xem lại &amp; Tạo khoá học
                 </button>
               </div>
             </div>
@@ -891,6 +1028,110 @@ export function CreateCourseDetail() {
             onClick={() => void handleAddCourseContent()}
           >
             Thêm
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      <Modal
+        show={showConfirmModal}
+        onHide={() => {
+          if (!isSubmitting) setShowConfirmModal(false);
+        }}
+        backdrop="static"
+        keyboard={!isSubmitting}
+        backdropClassName="backdrop"
+        dialogClassName="admin-course-confirm-modal"
+        centered
+        size="lg"
+      >
+        <Modal.Header closeButton={!isSubmitting}>
+          <Modal.Title>Xác nhận lịch đào tạo &amp; tạo khoá học</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="admin-confirm-summary">
+            <div className="admin-confirm-summary__course">
+              <div>
+                <strong>Khoá học:</strong> {course.name || "—"} (
+                {course.courseId || "—"})
+              </div>
+              <div>
+                <strong>Thời gian tổng:</strong>{" "}
+                {formatDate(course.startDate)} – {formatDate(course.endDate)}
+              </div>
+            </div>
+
+            {!scheduleValidation.isValid && (
+              <div className="admin-confirm-summary__alert" role="alert">
+                <BsExclamationCircle aria-hidden="true" />
+                <span>
+                  Lịch học chưa hợp lệ. Vui lòng đóng hộp thoại và sửa các học
+                  phần được đánh dấu lỗi trước khi xác nhận.
+                </span>
+              </div>
+            )}
+
+            <div className="admin-confirm-summary__list">
+              {scheduleValidation.sections.map((section) => {
+                const row = inputData[section.index];
+                return (
+                  <div
+                    key={section.index}
+                    className={`admin-confirm-row ${
+                      section.isValid
+                        ? "admin-confirm-row--valid"
+                        : "admin-confirm-row--invalid"
+                    }`}
+                  >
+                    <div className="admin-confirm-row__top">
+                      <span className="admin-confirm-row__title">
+                        Học phần {section.index + 1}:{" "}
+                        <strong>
+                          {section.contentName || "Chưa chọn nội dung"}
+                        </strong>
+                      </span>
+                      <span
+                        className={`admin-confirm-row__badge ${
+                          section.isValid
+                            ? "admin-confirm-row__badge--valid"
+                            : "admin-confirm-row__badge--invalid"
+                        }`}
+                      >
+                        {section.isValid ? "Hợp lệ" : "Không hợp lệ"}
+                      </span>
+                    </div>
+                    <div className="admin-confirm-row__dates">
+                      {formatYMDToVN(row.courseTimeStart)} –{" "}
+                      {formatYMDToVN(row.courseTimeEnd)}
+                      {section.durationDays !== null
+                        ? ` (${section.durationDays} ngày)`
+                        : ""}
+                    </div>
+                    {!section.isValid && section.errors.length > 0 && (
+                      <ul className="admin-confirm-row__errors">
+                        {section.errors.map((errMsg, errIdx) => (
+                          <li key={errIdx}>{errMsg}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            disabled={isSubmitting}
+            onClick={() => setShowConfirmModal(false)}
+          >
+            Quay lại chỉnh sửa
+          </Button>
+          <Button
+            className="btn btn-primary"
+            disabled={!scheduleValidation.isValid || isSubmitting}
+            onClick={() => void handleConfirmCreateCourse()}
+          >
+            {isSubmitting ? "Đang tạo khoá học..." : "Xác nhận tạo khoá học"}
           </Button>
         </Modal.Footer>
       </Modal>
