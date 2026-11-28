@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppDispatch } from '../../../app/store';
-import { filterLatestEligibleMonthCourses } from '../../../features/courses/courseHomeFilter';
+import { filterAvailableCatalogCourses } from '../../../features/courses/courseHomeFilter';
+import { useCourseCatalogNow } from '../../../features/courses/useCourseCatalogNow';
 import { fetchCourseList } from '../../../features/courses/coursesSlice';
 import type { ApiRejectedPayload } from '../../../features/courses/coursesTypes';
 import './guest-course-section.scss';
@@ -23,8 +24,32 @@ function Course() {
     const [currentPage, setCurrentPage] = useState(1);
     const recordPage = 3;
 
-    // Filter to ONLY the single latest eligible (year, month) <= current month/year in Asia/Ho_Chi_Minh
-    const filteredCourses = filterLatestEligibleMonthCourses(courses);
+    const now = useCourseCatalogNow(courses);
+
+    // Filter out expired courses (cutoff: 12:00 PM Asia/Ho_Chi_Minh on the day after startDate),
+    // then group remaining eligible courses by unique (courseMonth, courseYear).
+    const filteredCourses = useMemo(() => {
+        const available = filterAvailableCatalogCourses(courses, now);
+        const uniqueCourses: CourseItem[] = [];
+        const seen = new Set<string>();
+
+        available.forEach((course) => {
+            const courseKey = `${course.courseMonth}/${course.courseYear}`;
+            if (!seen.has(courseKey)) {
+                seen.add(courseKey);
+                uniqueCourses.push(course);
+            }
+        });
+
+        uniqueCourses.sort((a, b) => {
+            if (a.courseYear === b.courseYear) {
+                return a.courseMonth - b.courseMonth;
+            }
+            return a.courseYear - b.courseYear;
+        });
+
+        return uniqueCourses;
+    }, [courses, now]);
 
     const npage = Math.ceil(filteredCourses.length / recordPage);
     const lastIndex = currentPage * recordPage;
@@ -46,27 +71,7 @@ function Course() {
                 return;
             }
 
-            // Group courses by courseMonth and courseYear to display unique courses
-            const uniqueCourses: CourseItem[] = [];
-            const seen = new Set<string>();
-
-            (allCourses as CourseItem[]).forEach((course: CourseItem) => {
-                const courseKey = `${course.courseMonth}/${course.courseYear}`;
-                if (!seen.has(courseKey)) {
-                    seen.add(courseKey);
-                    uniqueCourses.push(course);
-                }
-            });
-
-            // Sort the unique courses based on courseYear and courseMonth
-            uniqueCourses.sort((a, b) => {
-                if (a.courseYear === b.courseYear) {
-                    return a.courseMonth - b.courseMonth;
-                }
-                return a.courseYear - b.courseYear;
-            });
-
-            setCourses(uniqueCourses);
+            setCourses(allCourses as CourseItem[]);
             setCurrentPage(1);
             setIsLoading(false);
         } catch (error) {

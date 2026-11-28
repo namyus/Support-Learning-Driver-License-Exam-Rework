@@ -1,8 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import './guest-course-table.scss'
 import { Link, useParams } from 'react-router-dom'
 import { CircularProgress } from '@mui/material';
 import { useAppDispatch } from '../../../app/store';
+import { filterAvailableCatalogCourses } from '../../../features/courses/courseHomeFilter';
+import { useCourseCatalogNow } from '../../../features/courses/useCourseCatalogNow';
 import {
     fetchCourseDetailsByMonth,
     fetchCoursesByMonth,
@@ -34,9 +36,14 @@ function CourseTable() {
     const dispatch = useAppDispatch();
     const { month } = useParams();
     const { year } = useParams();
-    const [data, setData] = useState<CourseRowItem[]>([]);
+    const [rawData, setRawData] = useState<CourseRowItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const now = useCourseCatalogNow(rawData);
+    const data = useMemo(
+        () => filterAvailableCatalogCourses(rawData, now),
+        [rawData, now]
+    );
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -60,29 +67,17 @@ function CourseTable() {
             const courseDetails = (await dispatch(
                 fetchCourseDetailsByMonth(targetMonth)
             ).unwrap()) as CourseDetailItem[];
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            const validCourse = courses.filter(course => {
-                const courseEndDate = new Date(course.endDate);
-                courseEndDate.setHours(0, 0, 0, 0);
-
-                return courseEndDate >= today;
-            });
-
-            const displayedCourses = validCourse.length > 0 ? validCourse : courses;
-
-            const tempCourseData: CourseRowItem[] = displayedCourses.map(course => {
+            const tempCourseData: CourseRowItem[] = courses.map(course => {
                 const detailsForCourse = courseDetails.filter(detail => detail.courseId === course.courseId);
                 return { ...course, details: detailsForCourse };
             });
 
-            setData(tempCourseData);
+            setRawData(tempCourseData);
         } catch (err) {
             console.log(err);
             const rejected = err as ApiRejectedPayload | undefined;
             if (rejected?.status === 404) {
-                setData([]);
+                setRawData([]);
             } else {
                 setError('Không thể tải thông tin khóa học. Vui lòng thử lại sau.');
             }

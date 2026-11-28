@@ -11,28 +11,21 @@
 --       2026-2027 demo seed data (9 Courses, 54 CourseDetails).
 --     - Automatically detects an existing or partially initialized database
 --       and aborts safely (SET NOEXEC ON) without duplicating or overwriting data.
---     - Passwords are NOT hardcoded in this public script; each seeded account
---       receives a unique random GUID via CONVERT(NVARCHAR(50), NEWID()).
+--     - All 38 seeded demo accounts use the shared plain-text demo password
+--       'Demo@123456' to match the Backend's direct plain-text login check.
+--     - Seeds 1 active theory Class (isTheoryClass = 1) for every one of the
+--       9 active courses (1101B2 through 0103B2) using eligible active theory
+--       Mentors (mentorID 1, 4, 5), plus the existing practice classes.
 --
---   MODE B — Existing Azure Demo Upgrade (Non-Destructive Schedule Shift)
+--   MODE B — Existing Azure Demo Upgrade (Non-Destructive Schedule Shift + Demo Sync)
 --     - Select and run ONLY the MODE B section on an existing Azure SQL demo DB.
---     - Updates ONLY scheduling fields (startDate, endDate, courseYear,
+--     - Updates scheduling fields (startDate, endDate, courseYear,
 --       courseTimeStart, courseTimeEnd) for the 9 whitelisted course IDs:
 --       1101B2, 1102B2, 1103B2, 1201B2, 1202B2, 1203B2, 0101B2, 0102B2, 0103B2.
---     - Runs inside a transaction, verifies exact expected row counts
---       (9 Course + 54 CourseDetails on first run; 0 + 0 on re-run), and rolls
---       back automatically if unexpected partial counts occur.
---     - Preserves Users, Members, Students, Invoices, Classes, ClassStudents.
---
--- MANUAL CREDENTIAL PROVISIONING AFTER MODE A (Fresh Installation):
---   Because the legacy Backend compares [User].[password] directly and this
---   repository is public, set private passwords manually after Mode A:
---
---     UPDATE [dbo].[User]
---     SET [password] = N'<YOUR_PRIVATE_PASSWORD>'
---     WHERE [userName] IN (
---         N'demo_admin_1', N'demo_staff_1', N'demo_mentor_1', N'demo_member_1'
---     );
+--     - Updates existing [dbo].[User].[password] values to N'Demo@123456'.
+--     - Idempotently creates any missing active theory Class rows for the 9
+--       active courses so Staff payment works for every selectable course.
+--     - Preserves Members, Students, Invoices, existing Classes, and ClassStudents.
 --
 -- ============================================================================
 
@@ -438,118 +431,118 @@ GO
 SET IDENTITY_INSERT [dbo].[User] ON
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (1, N'demo_admin_1', N'Quản Trị Viên Demo 1', CONVERT(NVARCHAR(50), NEWID()), N'demo_admin_1@example.com', N'0900000001', '2023-10-16', 1, 1)
+	VALUES (1, N'demo_admin_1', N'Quản Trị Viên Demo 1', N'Demo@123456', N'demo_admin_1@example.com', N'0900000001', '2023-10-16', 1, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (2, N'demo_member_1', N'Học Viên Demo 1', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_1@example.com', N'0900000002', '2023-10-16', 4, 1)
+	VALUES (2, N'demo_member_1', N'Học Viên Demo 1', N'Demo@123456', N'demo_member_1@example.com', N'0900000002', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (3, N'demo_member_2', N'Học Viên Demo 2', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_2@example.com', N'0900000003', '2023-10-16', 4, 1)
+	VALUES (3, N'demo_member_2', N'Học Viên Demo 2', N'Demo@123456', N'demo_member_2@example.com', N'0900000003', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (4, N'demo_member_3', N'Học Viên Demo 3', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_3@example.com', N'0900000004', '2023-10-16', 4, 1)
+	VALUES (4, N'demo_member_3', N'Học Viên Demo 3', N'Demo@123456', N'demo_member_3@example.com', N'0900000004', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (5, N'demo_member_4', N'Học Viên Demo 4', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_4@example.com', N'0900000005', '2023-10-16', 4, 1)
+	VALUES (5, N'demo_member_4', N'Học Viên Demo 4', N'Demo@123456', N'demo_member_4@example.com', N'0900000005', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (6, N'demo_member_5', N'Học Viên Demo 5', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_5@example.com', N'0900000006', '2023-10-16', 4, 1)
+	VALUES (6, N'demo_member_5', N'Học Viên Demo 5', N'Demo@123456', N'demo_member_5@example.com', N'0900000006', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (7, N'demo_member_6', N'Học Viên Demo 6', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_6@example.com', N'0900000007', '2023-10-16', 4, 1)
+	VALUES (7, N'demo_member_6', N'Học Viên Demo 6', N'Demo@123456', N'demo_member_6@example.com', N'0900000007', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (8, N'demo_member_7', N'Học Viên Demo 7', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_7@example.com', N'0900000008', '2023-10-16', 4, 1)
+	VALUES (8, N'demo_member_7', N'Học Viên Demo 7', N'Demo@123456', N'demo_member_7@example.com', N'0900000008', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (9, N'demo_member_8', N'Học Viên Demo 8', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_8@example.com', N'0900000009', '2023-10-16', 4, 1)
+	VALUES (9, N'demo_member_8', N'Học Viên Demo 8', N'Demo@123456', N'demo_member_8@example.com', N'0900000009', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (10, N'demo_member_9', N'Học Viên Demo 9', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_9@example.com', N'0900000010', '2023-10-16', 4, 1)
+	VALUES (10, N'demo_member_9', N'Học Viên Demo 9', N'Demo@123456', N'demo_member_9@example.com', N'0900000010', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (11, N'demo_member_10', N'Học Viên Demo 10', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_10@example.com', N'0900000011', '2023-10-16', 4, 1)
+	VALUES (11, N'demo_member_10', N'Học Viên Demo 10', N'Demo@123456', N'demo_member_10@example.com', N'0900000011', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (12, N'demo_member_11', N'Học Viên Demo 11', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_11@example.com', N'0900000012', '2023-10-16', 4, 1)
+	VALUES (12, N'demo_member_11', N'Học Viên Demo 11', N'Demo@123456', N'demo_member_11@example.com', N'0900000012', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (13, N'demo_member_12', N'Học Viên Demo 12', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_12@example.com', N'0900000013', '2023-10-16', 4, 1)
+	VALUES (13, N'demo_member_12', N'Học Viên Demo 12', N'Demo@123456', N'demo_member_12@example.com', N'0900000013', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (14, N'demo_member_13', N'Học Viên Demo 13', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_13@example.com', N'0900000014', '2023-10-16', 4, 1)
+	VALUES (14, N'demo_member_13', N'Học Viên Demo 13', N'Demo@123456', N'demo_member_13@example.com', N'0900000014', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (15, N'demo_member_14', N'Học Viên Demo 14', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_14@example.com', N'0900000015', '2023-10-16', 4, 1)
+	VALUES (15, N'demo_member_14', N'Học Viên Demo 14', N'Demo@123456', N'demo_member_14@example.com', N'0900000015', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (16, N'demo_member_15', N'Học Viên Demo 15', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_15@example.com', N'0900000016', '2023-10-16', 4, 1)
+	VALUES (16, N'demo_member_15', N'Học Viên Demo 15', N'Demo@123456', N'demo_member_15@example.com', N'0900000016', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (17, N'demo_member_16', N'Học Viên Demo 16', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_16@example.com', N'0900000017', '2023-10-16', 4, 1)
+	VALUES (17, N'demo_member_16', N'Học Viên Demo 16', N'Demo@123456', N'demo_member_16@example.com', N'0900000017', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (18, N'demo_member_17', N'Học Viên Demo 17', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_17@example.com', N'0900000018', '2023-10-16', 4, 1)
+	VALUES (18, N'demo_member_17', N'Học Viên Demo 17', N'Demo@123456', N'demo_member_17@example.com', N'0900000018', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (19, N'demo_member_18', N'Học Viên Demo 18', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_18@example.com', N'0900000019', '2023-10-16', 4, 1)
+	VALUES (19, N'demo_member_18', N'Học Viên Demo 18', N'Demo@123456', N'demo_member_18@example.com', N'0900000019', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (20, N'demo_member_19', N'Học Viên Demo 19', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_19@example.com', N'0900000020', '2023-10-16', 4, 1)
+	VALUES (20, N'demo_member_19', N'Học Viên Demo 19', N'Demo@123456', N'demo_member_19@example.com', N'0900000020', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (21, N'demo_member_20', N'Học Viên Demo 20', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_20@example.com', N'0900000021', '2023-10-16', 4, 1)
+	VALUES (21, N'demo_member_20', N'Học Viên Demo 20', N'Demo@123456', N'demo_member_20@example.com', N'0900000021', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (22, N'demo_member_21', N'Học Viên Demo 21', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_21@example.com', N'0900000022', '2023-10-16', 4, 1)
+	VALUES (22, N'demo_member_21', N'Học Viên Demo 21', N'Demo@123456', N'demo_member_21@example.com', N'0900000022', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (23, N'demo_member_22', N'Học Viên Demo 22', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_22@example.com', N'0900000023', '2023-10-16', 4, 1)
+	VALUES (23, N'demo_member_22', N'Học Viên Demo 22', N'Demo@123456', N'demo_member_22@example.com', N'0900000023', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (24, N'demo_member_23', N'Học Viên Demo 23', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_23@example.com', N'0900000024', '2023-10-16', 4, 1)
+	VALUES (24, N'demo_member_23', N'Học Viên Demo 23', N'Demo@123456', N'demo_member_23@example.com', N'0900000024', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (25, N'demo_member_24', N'Học Viên Demo 24', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_24@example.com', N'0900000025', '2023-10-16', 4, 1)
+	VALUES (25, N'demo_member_24', N'Học Viên Demo 24', N'Demo@123456', N'demo_member_24@example.com', N'0900000025', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (26, N'demo_member_25', N'Học Viên Demo 25', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_25@example.com', N'0900000026', '2023-10-16', 4, 1)
+	VALUES (26, N'demo_member_25', N'Học Viên Demo 25', N'Demo@123456', N'demo_member_25@example.com', N'0900000026', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (27, N'demo_mentor_1', N'Giảng Viên Demo 1', CONVERT(NVARCHAR(50), NEWID()), N'demo_mentor_1@example.com', N'0900000027', '2023-10-16', 3, 1)
+	VALUES (27, N'demo_mentor_1', N'Giảng Viên Demo 1', N'Demo@123456', N'demo_mentor_1@example.com', N'0900000027', '2023-10-16', 3, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (28, N'demo_mentor_2', N'Giảng Viên Demo 2', CONVERT(NVARCHAR(50), NEWID()), N'demo_mentor_2@example.com', N'0900000028', '2023-10-16', 3, 1)
+	VALUES (28, N'demo_mentor_2', N'Giảng Viên Demo 2', N'Demo@123456', N'demo_mentor_2@example.com', N'0900000028', '2023-10-16', 3, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (29, N'demo_mentor_3', N'Giảng Viên Demo 3', CONVERT(NVARCHAR(50), NEWID()), N'demo_mentor_3@example.com', N'0900000029', '2023-10-16', 3, 1)
+	VALUES (29, N'demo_mentor_3', N'Giảng Viên Demo 3', N'Demo@123456', N'demo_mentor_3@example.com', N'0900000029', '2023-10-16', 3, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (30, N'demo_mentor_4', N'Giảng Viên Demo 4', CONVERT(NVARCHAR(50), NEWID()), N'demo_mentor_4@example.com', N'0900000030', '2023-10-16', 3, 1)
+	VALUES (30, N'demo_mentor_4', N'Giảng Viên Demo 4', N'Demo@123456', N'demo_mentor_4@example.com', N'0900000030', '2023-10-16', 3, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (31, N'demo_mentor_5', N'Giảng Viên Demo 5', CONVERT(NVARCHAR(50), NEWID()), N'demo_mentor_5@example.com', N'0900000031', '2023-10-16', 3, 1)
+	VALUES (31, N'demo_mentor_5', N'Giảng Viên Demo 5', N'Demo@123456', N'demo_mentor_5@example.com', N'0900000031', '2023-10-16', 3, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (32, N'demo_staff_1', N'Nhân Viên Demo 1', CONVERT(NVARCHAR(50), NEWID()), N'demo_staff_1@example.com', N'0900000032', '2023-10-16', 2, 1)
+	VALUES (32, N'demo_staff_1', N'Nhân Viên Demo 1', N'Demo@123456', N'demo_staff_1@example.com', N'0900000032', '2023-10-16', 2, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (33, N'demo_staff_2', N'Nhân Viên Demo 2', CONVERT(NVARCHAR(50), NEWID()), N'demo_staff_2@example.com', N'0900000033', '2023-10-16', 2, 1)
+	VALUES (33, N'demo_staff_2', N'Nhân Viên Demo 2', N'Demo@123456', N'demo_staff_2@example.com', N'0900000033', '2023-10-16', 2, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (34, N'demo_staff_3', N'Nhân Viên Demo 3', CONVERT(NVARCHAR(50), NEWID()), N'demo_staff_3@example.com', N'0900000034', '2023-10-16', 2, 1)
+	VALUES (34, N'demo_staff_3', N'Nhân Viên Demo 3', N'Demo@123456', N'demo_staff_3@example.com', N'0900000034', '2023-10-16', 2, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (35, N'demo_staff_4', N'Nhân Viên Demo 4', CONVERT(NVARCHAR(50), NEWID()), N'demo_staff_4@example.com', N'0900000035', '2023-10-16', 2, 1)
+	VALUES (35, N'demo_staff_4', N'Nhân Viên Demo 4', N'Demo@123456', N'demo_staff_4@example.com', N'0900000035', '2023-10-16', 2, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (36, N'demo_staff_5', N'Nhân Viên Demo 5', CONVERT(NVARCHAR(50), NEWID()), N'demo_staff_5@example.com', N'0900000036', '2023-10-16', 2, 1)
+	VALUES (36, N'demo_staff_5', N'Nhân Viên Demo 5', N'Demo@123456', N'demo_staff_5@example.com', N'0900000036', '2023-10-16', 2, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (37, N'demo_member_26', N'Học Viên Demo 26', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_26@example.com', N'0900000037', '2023-10-16', 4, 1)
+	VALUES (37, N'demo_member_26', N'Học Viên Demo 26', N'Demo@123456', N'demo_member_26@example.com', N'0900000037', '2023-10-16', 4, 1)
 GO
 INSERT [dbo].[User] ([userID], [userName], [fullName], [password], [email], [phone], [createTime], [roleID], [status])
-	VALUES (38, N'demo_member_27', N'Học Viên Demo 27', CONVERT(NVARCHAR(50), NEWID()), N'demo_member_27@example.com', N'0900000038', '2023-10-16', 4, 1)
+	VALUES (38, N'demo_member_27', N'Học Viên Demo 27', N'Demo@123456', N'demo_member_27@example.com', N'0900000038', '2023-10-16', 4, 1)
 GO
 SET IDENTITY_INSERT [dbo].[User] OFF
 
@@ -1168,6 +1161,30 @@ INSERT [dbo].[Class] ([classID], [mentorID], [courseID], [isTheoryClass], [dayOf
 GO
 INSERT [dbo].[Class] ([classID], [mentorID], [courseID], [isTheoryClass], [dayOfWeek], [limitStudent], [shift], [status])
 	VALUES ('11', '2', '1101B2', 0, '2', 3, N'Sáng', 1)
+GO
+INSERT [dbo].[Class] ([classID], [mentorID], [courseID], [isTheoryClass], [dayOfWeek], [limitStudent], [shift], [status])
+	VALUES (12, 4, N'1102B2', 1, 0, NULL, NULL, 1)
+GO
+INSERT [dbo].[Class] ([classID], [mentorID], [courseID], [isTheoryClass], [dayOfWeek], [limitStudent], [shift], [status])
+	VALUES (13, 5, N'1103B2', 1, 0, NULL, NULL, 1)
+GO
+INSERT [dbo].[Class] ([classID], [mentorID], [courseID], [isTheoryClass], [dayOfWeek], [limitStudent], [shift], [status])
+	VALUES (14, 1, N'1201B2', 1, 0, NULL, NULL, 1)
+GO
+INSERT [dbo].[Class] ([classID], [mentorID], [courseID], [isTheoryClass], [dayOfWeek], [limitStudent], [shift], [status])
+	VALUES (15, 4, N'1202B2', 1, 0, NULL, NULL, 1)
+GO
+INSERT [dbo].[Class] ([classID], [mentorID], [courseID], [isTheoryClass], [dayOfWeek], [limitStudent], [shift], [status])
+	VALUES (16, 5, N'1203B2', 1, 0, NULL, NULL, 1)
+GO
+INSERT [dbo].[Class] ([classID], [mentorID], [courseID], [isTheoryClass], [dayOfWeek], [limitStudent], [shift], [status])
+	VALUES (17, 1, N'0101B2', 1, 0, NULL, NULL, 1)
+GO
+INSERT [dbo].[Class] ([classID], [mentorID], [courseID], [isTheoryClass], [dayOfWeek], [limitStudent], [shift], [status])
+	VALUES (18, 4, N'0102B2', 1, 0, NULL, NULL, 1)
+GO
+INSERT [dbo].[Class] ([classID], [mentorID], [courseID], [isTheoryClass], [dayOfWeek], [limitStudent], [shift], [status])
+	VALUES (19, 5, N'0103B2', 1, 0, NULL, NULL, 1)
 SET IDENTITY_INSERT [dbo].[Class] OFF
 
 /* Add data: ClassStudent */
@@ -2280,6 +2297,8 @@ BEGIN
 
     DECLARE @CourseRows INT = 0;
     DECLARE @CourseDetailRows INT = 0;
+    DECLARE @UserPasswordRows INT = 0;
+    DECLARE @AddedTheoryClassRows INT = 0;
 
     UPDATE [dbo].[Course]
     SET
@@ -2317,11 +2336,56 @@ BEGIN
 
     -- Accept exact full upgrade (9 Courses, 54 CourseDetails) or idempotent no-op (0, 0).
     -- Roll back on any unexpected partial row count.
+    IF OBJECT_ID(N'[dbo].[User]', N'U') IS NOT NULL
+    BEGIN
+        UPDATE [dbo].[User]
+        SET [password] = N'Demo@123456'
+        WHERE ISNULL([password], N'') <> N'Demo@123456';
+
+        SET @UserPasswordRows = @@ROWCOUNT;
+    END;
+
+    IF OBJECT_ID(N'[dbo].[Class]', N'U') IS NOT NULL
+       AND OBJECT_ID(N'[dbo].[Mentor]', N'U') IS NOT NULL
+    BEGIN
+        DECLARE @TheoryMentorFallback INT = (
+            SELECT TOP (1) m.[mentorID]
+            FROM [dbo].[Mentor] AS m
+            INNER JOIN [dbo].[User] AS u ON u.[userID] = m.[userID]
+            WHERE m.[isTeachingTheory] = 1 AND u.[status] = 1
+            ORDER BY m.[mentorID]
+        );
+
+        IF @TheoryMentorFallback IS NOT NULL
+        BEGIN
+            INSERT INTO [dbo].[Class] ([mentorID], [courseID], [isTheoryClass], [dayOfWeek], [limitStudent], [shift], [status])
+            SELECT @TheoryMentorFallback, c.[courseID], 1, 0, NULL, NULL, 1
+            FROM [dbo].[Course] AS c
+            WHERE c.[status] = 1
+              AND c.[courseID] IN (
+                  N'1101B2', N'1102B2', N'1103B2',
+                  N'1201B2', N'1202B2', N'1203B2',
+                  N'0101B2', N'0102B2', N'0103B2'
+              )
+              AND NOT EXISTS (
+                  SELECT 1 FROM [dbo].[Class] AS cl
+                  WHERE cl.[courseID] = c.[courseID] AND cl.[isTheoryClass] = 1
+              );
+
+            SET @AddedTheoryClassRows = @@ROWCOUNT;
+        END;
+    END;
+
     IF (@CourseRows = 9 AND @CourseDetailRows = 54)
        OR (@CourseRows = 0 AND @CourseDetailRows = 0)
     BEGIN
         COMMIT TRANSACTION;
-        PRINT CONCAT(N'[MODE B] Upgrade completed cleanly. Courses updated: ', @CourseRows, N', CourseDetails updated: ', @CourseDetailRows);
+        PRINT CONCAT(
+            N'[MODE B] Upgrade completed cleanly. Courses updated: ', @CourseRows,
+            N', CourseDetails updated: ', @CourseDetailRows,
+            N', User passwords updated: ', @UserPasswordRows,
+            N', Theory classes added: ', @AddedTheoryClassRows
+        );
     END
     ELSE
     BEGIN
