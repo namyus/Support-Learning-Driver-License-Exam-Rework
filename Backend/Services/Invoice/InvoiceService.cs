@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Backend.DB.Models;
 using Backend.DTO.Invoice;
 using Backend.Repository.ClassRepository;
 using Backend.Repository.ClassStudentRepository;
@@ -13,6 +14,7 @@ namespace Backend.Services.Invoice
 {
     public class InvoiceService : IInvoiceService
     {
+        private readonly DrivingLicenseContext _context;
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly IStudentRepository _studentRepository;
         private readonly IMemberRepository _memberRepository;
@@ -22,7 +24,8 @@ namespace Backend.Services.Invoice
         private readonly IClassStudentRepository _classStudentRepository;
         private readonly IMapper _mapper;
 
-        public InvoiceService(IInvoiceRepository invoiceRepository
+        public InvoiceService(DrivingLicenseContext context
+            , IInvoiceRepository invoiceRepository
             , IStudentRepository studentRepository
             , IMemberRepository memberRepository
             , ICourseRepository courseRepository
@@ -31,6 +34,7 @@ namespace Backend.Services.Invoice
             , IClassStudentRepository classStudentRepository
             , IMapper mapper)
         {
+            _context = context;
             _invoiceRepository = invoiceRepository;
             _studentRepository = studentRepository;
             _memberRepository = memberRepository;
@@ -145,6 +149,13 @@ namespace Backend.Services.Invoice
                 }
 
                 var course = await _courseRepository.GetByIdAsync(member.CourseId);
+                if (course is null)
+                {
+                    result.IsError = true;
+                    result.Payload = -1;
+                    result.ErrorMessage = "Khóa học không tồn tại!";
+                    return result;
+                }
 
                 if (invoiceCreateDto.AmountPaid != course.CourseFee)
                 {
@@ -157,7 +168,7 @@ namespace Backend.Services.Invoice
                 var existInvoice = await _invoiceRepository.GetAll()
                     .Where(i => i.CourseId == member.CourseId && i.MemberId == invoiceCreateDto.MemberId)
                     .FirstOrDefaultAsync();
-                if (existInvoice != null)
+                if (existInvoice != null || member.IsPaid == true)
                 {
                     result.IsError = true;
                     result.Payload = -2;
@@ -165,12 +176,49 @@ namespace Backend.Services.Invoice
                     return result;
                 }
 
-                var invoice = _mapper.Map<DB.Models.Invoice>(invoiceCreateDto);
-                invoice.CourseId = member.CourseId;
-                invoice.InvoiceTime = DateTime.Now;
-                await _invoiceRepository.AddAsync(invoice);
+                var existStudent = await _studentRepository
+                    .GetAll()
+                    .FirstOrDefaultAsync(i => i.CourseId == course.CourseId && i.MemberId == member.MemberId);
+                if (existStudent != null)
+                {
+                    result.IsError = true;
+                    result.Payload = -2;
+                    result.ErrorMessage = "Học viên đã tồn tại";
+                    return result;
+                }
 
-                await AddMemberIntoCourse(course, member);
+                var theoryClass = await _classRepository
+                    .GetAll()
+                    .FirstOrDefaultAsync(i => i.CourseId == course.CourseId && i.IsTheoryClass == true);
+                if (theoryClass == null)
+                {
+                    result.IsError = true;
+                    result.Payload = 0;
+                    result.ErrorMessage = "Không tìm thấy lớp học lý thuyết";
+                    return result;
+                }
+
+                var strategy = _context.Database.CreateExecutionStrategy();
+                await strategy.ExecuteAsync(async () =>
+                {
+                    await using var transaction = await _context.Database.BeginTransactionAsync();
+                    try
+                    {
+                        var invoice = _mapper.Map<DB.Models.Invoice>(invoiceCreateDto);
+                        invoice.CourseId = member.CourseId;
+                        invoice.InvoiceTime = DateTime.Now;
+                        await _invoiceRepository.AddAsync(invoice);
+
+                        await AddMemberIntoCourse(course, member, theoryClass);
+
+                        await transaction.CommitAsync();
+                    }
+                    catch
+                    {
+                        await transaction.RollbackAsync();
+                        throw;
+                    }
+                });
             }
             catch (Exception e)
             {
@@ -181,7 +229,10 @@ namespace Backend.Services.Invoice
             return result;
         }
 
-        private async Task AddMemberIntoCourse(DB.Models.Course course, DB.Models.Member member)
+        private async Task AddMemberIntoCourse(
+            DB.Models.Course course,
+            DB.Models.Member member,
+            DB.Models.Class theoryClass)
         {
             try
             {
@@ -197,14 +248,6 @@ namespace Backend.Services.Invoice
                 if (existStudent != null)
                 {
                     throw new Exception("Học viên đã tồn tại");
-                }
-
-                var theoryClass = await _classRepository
-                    .GetAll()
-                    .FirstOrDefaultAsync(i => i.CourseId == courseId && i.IsTheoryClass == true);
-                if (theoryClass == null)
-                {
-                    throw new Exception("Không tìm thấy lớp học lý thuyết");
                 }
 
                 var numberOfStudents = await _studentRepository
